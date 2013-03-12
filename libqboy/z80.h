@@ -9,6 +9,9 @@ enum Direction {
 	RIGHT
 };
 
+typedef qint8 reg_s_t;
+typedef qint16 reg_l_t;
+
 class z80 {
 public:
 	z80();
@@ -16,44 +19,44 @@ public:
 	void cycle();
 private:
 	struct clock_t {
-		quint16 m, t;
+		reg_l_t m, t;
 	} clock;
 
 	struct register_t {
-		quint8 a, b, c, d, e, h, l;
-
+		reg_s_t a, b, c, d, e, h, l;
 		struct flags {
-			quint8 s : 1;
-			quint8 z : 1;
-			quint8 x1 : 1;
-			quint8 n : 1;
-			quint8 x2: 1;
-			quint8 pv : 1;
-			quint8 h : 1;
-			quint8 c : 1;
+			int s : 1;
+			int z : 1;
+			int x1 : 1;
+			int n : 1;
+			int x2: 1;
+			int pv : 1;
+			int h : 1;
+			int c : 1;
 		} f;
-
-		quint16 pc, sp;
-		quint16 m, t;
+		reg_l_t pc, sp;
+		reg_l_t m, t;
 	} r;
 
 	mmu MMU;
 
-	void call(quint8 opcode);
-	void addticks(quint16 m, quiint16 t);
+	void call(reg_s_t opcode);
+	void addticks(reg_l_t m, reg_l_t t);
+
+	reg_s_t alu_add(reg_s_t &a, reg_s_t &b);
 
 	void opp_invalid();
 
 	void opp_nop();
-	void opp_ld_rr_nn(quint8 &ra, quint8 &rb);
-	void opp_ld_r_n(quint8 &ra);
-	void opp_ld_ss_a(quint8 &ra, quint8 &rb);
-	void opp_inc_rr(quint8 &ra, quint8 &rb);
-	void opp_inc_r(quint8 &ra);
-	void opp_dec_r(quint8 &ra);
+	void opp_ld_rr_nn(reg_s_t &ra, reg_s_t &rb);
+	void opp_ld_r_n(reg_s_t &ra);
+	void opp_ld_ss_a(reg_s_t &ra, reg_s_t &rb);
+	void opp_inc_rr(reg_s_t &ra, reg_s_t &rb);
+	void opp_inc_r(reg_s_t &ra);
+	void opp_dec_r(reg_s_t &ra);
 	void opp_rdca(Direction dir);
 	void opp_ld_mm_sp();
-	void opp_add_hl_rr(quint8 &ra, quint8 &rb);
+	void opp_add_hl_rr(reg_s_t &ra, reg_s_t &rb);
 };
 
 #endif // Z80_H

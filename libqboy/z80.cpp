@@ -20,7 +20,17 @@ void z80::reset() {
 	r.f.s = r.f.z = r.f.x1 = r.f.n = r.f.x2 = r.f.pv = r.f.h = r.f.c = 0;
 }
 
-void z80::call(quint8 opcode) {
+reg_s_t z80::alu_add(reg_s_t &a, reg_s_t &b) {
+	qint16 ans = a + b;
+	r.f.s = (ans & (1 << 7)) ? 1 : 0;
+	r.f.z = (ans && 0xFF) ? 0 : 1;
+	r.f.h = (a & 15) + (b & 15) > 15 ? 1 : 0;
+	r.f.n = 0;
+	r.f.c = (ans & (1 << 8)) ? 1 : 0;
+	return ans;
+}
+
+void z80::call(reg_s_t opcode) {
 	switch (opcode) {
 	case 0x00: opp_nop(); break;
 	case 0x01: opp_ld_rr_nn(r.b, r.c); break;
@@ -36,7 +46,7 @@ void z80::call(quint8 opcode) {
 	}
 }
 
-void z80::addticks(quint16 m, quint16 t) {
+void z80::addticks(reg_l_t m, reg_l_t t) {
 	clock.m += m;
 	clock.t += t;
 }
@@ -46,44 +56,44 @@ void z80::opp_invalid() {
 }
 
 void z80::opp_nop() {
-	addticks(1);
+	addticks(1, 4);
 }
 
-void z80::opp_ld_rr_nn(quint8 &ra, quint8 &rb) {
+void z80::opp_ld_rr_nn(reg_s_t &ra, reg_s_t &rb) {
 	ra = MMU.readbyte(r.pc++);
 	rb = MMU.readbyte(r.pc++);
-	addticks(3);
+	addticks(3, 12);
 }
 
-void z80::opp_ld_r_n(quint8 &ra) {
+void z80::opp_ld_r_n(reg_s_t &ra) {
 	ra = MMU.readbyte(r.pc++);
-	addticks(2);
+	addticks(2, 8);
 }
 
-void z80::opp_ld_ss_a(quint8 &ra, quint8 &rb) {
+void z80::opp_ld_ss_a(reg_s_t &ra, reg_s_t &rb) {
 	quint16 addr = (ra << 8) + rb;
 	MMU.writebyte(addr, r.a);
-	addticks(2);
+	addticks(2, 8);
 }
 
-void z80::opp_inc_rr(quint8 &ra, quint8 &rb) {
+void z80::opp_inc_rr(reg_s_t &ra, reg_s_t &rb) {
 	if (++rb == 0) ra++;
-	addticks(1);
+	addticks(1, 4);
 }
 
-void z80::opp_inc_r(quint8 &ra) {
+void z80::opp_inc_r(reg_s_t &ra) {
 	quint16 res = ++ra;
 	r.f.s = 0; // Can never be negative?
 	r.f.z = (ra == 0) ? 1 : 0;
-	if (res >= (1 << 8)) r.f.carry = 1;
-	addticks(1);
+	if (res >= (1 << 8)) r.f.c = 1;
+	addticks(1, 4);
 }
 
-void z80::opp_dec_r(quint8 &ra) {
+void z80::opp_dec_r(reg_s_t &ra) {
 	quint16 res = --ra;
-	if (ra == 0) r.f.zero = 1;
-	r.f.operation = 1;
-	addticks(1);
+	if (ra == 0) r.f.z = 1;
+	r.f.n = 1;
+	addticks(1, 4);
 }
 
 void z80::opp_rdca(Direction dir) {
@@ -96,20 +106,20 @@ void z80::opp_rdca(Direction dir) {
 		r.a = (r.a >> 1) + bit;
 	}
 
-	r.f &= 0xEF; // reset 0x10 bit
-	if (bit != 0) r.f |= 0x10;
+	r.f.z = 0; // reset 0x10 bit
+	if (bit != 0) r.f.z = 1;
 
-	addticks(1);
+	addticks(1, 4);
 }
 
 void z80::opp_ld_mm_sp() {
 	assert(false && "You DO need to implement opp_ld_mm_sp()");
 }
 
-void z80::opp_add_hl_rr(quint8 &ra, quint8 &rb) {
+void z80::opp_add_hl_rr(reg_s_t &ra, reg_s_t &rb) {
 	quint32 hl = (r.h << 8) + r.l;
 	hl += (ra << 8) + rb;
 	if (hl >= (1 << 16))
 
-	addticks(3);
+	addticks(3, 12);
 }
