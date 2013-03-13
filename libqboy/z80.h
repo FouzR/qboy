@@ -24,31 +24,33 @@ private:
 	} clock;
 
 	struct register_t {
-		reg_s_t a, b, c, d, e, h, l;
-		reg_l_t pc, sp;
+		reg_s_t a, b, c, d, e, h, l, s, p;
+		reg_l_t pc;
 		reg_l_t m, t;
 	} r;
 
 	z80mmu mmu;
 	z80alu alu;
 
+	reg_s_t* getregister(int code);
+	reg_s_t* getregisterpair(int code, bool first);
+	reg_l_t getSPval();
+
+	reg_s_t getbytearg();
 	void call(reg_s_t opcode);
 	void addticks(reg_l_t m, reg_l_t t);
 
 	reg_s_t alu_add(reg_s_t &a, reg_s_t &b);
 
-	void opp_invalid();
+	void op_invalid();
 
-	void opp_nop();
-	void opp_ld_rr_nn(reg_s_t &ra, reg_s_t &rb);
-	void opp_ld_r_n(reg_s_t &ra);
-	void opp_ld_ss_a(reg_s_t &ra, reg_s_t &rb);
-	void opp_inc_rr(reg_s_t &ra, reg_s_t &rb);
-	void opp_inc_r(reg_s_t &ra);
-	void opp_dec_r(reg_s_t &ra);
-	void opp_rdca(Direction dir);
-	void opp_ld_mm_sp();
-	void opp_add_hl_rr(reg_s_t &ra, reg_s_t &rb);
+	void op_nop();
+	void op_ld_r_r(int arg1, int arg2);
+	void op_ld_r_n(int arg);
+	void op_ld_ahl_nn(int arg);
+	void op_ld_dd_nn(int arg);
+	void op_ld_sp_hl();
+	void op_push_qq(int arg);
 };
 
 #endif // Z80_H

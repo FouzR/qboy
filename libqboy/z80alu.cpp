@@ -5,5 +5,5 @@ z80alu::z80alu() {
 }
 
 void z80alu::reset() {
-	flag.c = flag.h = flag.n = flag.pv = flag.s = flag.x1 = flag.x2 = flag.z = false;
+	FC = FH = FN = FPV = FS = FX1 = FX2 = FZ = false;
 }

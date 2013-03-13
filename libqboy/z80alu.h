@@ -8,16 +8,15 @@ public:
 	z80alu();
 	void reset();
 private:
-	struct flags {
-		int s : 1;
-		int z : 1;
-		int x1 : 1;
-		int n : 1;
-		int x2: 1;
-		int pv : 1;
-		int h : 1;
-		int c : 1;
-	} flag;
+	// flags
+	bool FS;
+	bool FZ;
+	bool FX1;
+	bool FN;
+	bool FX2;
+	bool FPV;
+	bool FH;
+	bool FC;
 };
 
 #endif // Z80ALU_H
