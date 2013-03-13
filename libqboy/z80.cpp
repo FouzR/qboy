@@ -7,7 +7,7 @@ z80::z80() {
 }
 
 void z80::cycle() {
-	int op = MMU.readbyte(r.pc++);
+	int op = mmu.readbyte(r.pc++);
 	call(op);
 	clock.m += r.m;
 	clock.t += r.t;
@@ -17,7 +17,7 @@ void z80::reset() {
 	clock.m = 0;
 	clock.t = 0;
 	r.a = r.b = r.c = r.d = r.e = r.h = r.l = r.pc = r.sp = r.m = r.t = 0;
-	r.f.s = r.f.z = r.f.x1 = r.f.n = r.f.x2 = r.f.pv = r.f.h = r.f.c = 0;
+	alu.reset();
 }
 
 reg_s_t z80::alu_add(reg_s_t &a, reg_s_t &b) {
@@ -60,19 +60,19 @@ void z80::opp_nop() {
 }
 
 void z80::opp_ld_rr_nn(reg_s_t &ra, reg_s_t &rb) {
-	ra = MMU.readbyte(r.pc++);
-	rb = MMU.readbyte(r.pc++);
+	ra = mmu.readbyte(r.pc++);
+	rb = mmu.readbyte(r.pc++);
 	addticks(3, 12);
 }
 
 void z80::opp_ld_r_n(reg_s_t &ra) {
-	ra = MMU.readbyte(r.pc++);
+	ra = mmu.readbyte(r.pc++);
 	addticks(2, 8);
 }
 
 void z80::opp_ld_ss_a(reg_s_t &ra, reg_s_t &rb) {
 	quint16 addr = (ra << 8) + rb;
-	MMU.writebyte(addr, r.a);
+	mmu.writebyte(addr, r.a);
 	addticks(2, 8);
 }
 

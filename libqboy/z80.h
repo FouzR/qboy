@@ -2,7 +2,8 @@
 #define Z80_H
 
 #include "libqboy_global.h"
-#include "mmu.h"
+#include "z80mmu.h"
+#include "z80alu.h"
 
 enum Direction {
 	LEFT,
@@ -24,21 +25,12 @@ private:
 
 	struct register_t {
 		reg_s_t a, b, c, d, e, h, l;
-		struct flags {
-			int s : 1;
-			int z : 1;
-			int x1 : 1;
-			int n : 1;
-			int x2: 1;
-			int pv : 1;
-			int h : 1;
-			int c : 1;
-		} f;
 		reg_l_t pc, sp;
 		reg_l_t m, t;
 	} r;
 
-	mmu MMU;
+	z80mmu mmu;
+	z80alu alu;
 
 	void call(reg_s_t opcode);
 	void addticks(reg_l_t m, reg_l_t t);

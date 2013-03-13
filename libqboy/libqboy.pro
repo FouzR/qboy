@@ -13,12 +13,14 @@ DEFINES += LIBQBOY_LIBRARY
 
 SOURCES += libqboy.cpp \
     z80.cpp \
-    mmu.cpp
+    z80alu.cpp \
+    z80mmu.cpp
 
 HEADERS += libqboy.h\
         libqboy_global.h \
     z80.h \
-    mmu.h
+    z80alu.h \
+    z80mmu.h
 
 unix:!symbian {
     maemo5 {

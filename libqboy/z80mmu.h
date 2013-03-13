@@ -3,9 +3,9 @@
 
 #include "libqboy_global.h"
 
-class mmu {
+class z80mmu {
 public:
-	mmu();
+	z80mmu();
 	quint8 readbyte(quint16 address);
 	quint16 readword(quint16 address);
 	void writebyte(quint16 address, quint8 value);
