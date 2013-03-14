@@ -4,14 +4,12 @@
 #include "libqboy_global.h"
 #include "z80mmu.h"
 #include "z80alu.h"
+#include "z80register.h"
 
 enum Direction {
 	LEFT,
 	RIGHT
 };
-
-typedef qint8 reg_s_t;
-typedef qint16 reg_l_t;
 
 class z80 {
 public:
@@ -19,30 +17,23 @@ public:
 	void reset();
 	void cycle();
 private:
-	struct clock_t {
-		reg_l_t m, t;
-	} clock;
-
-	struct register_t {
-		reg_s_t a, b, c, d, e, h, l, s, p;
-		reg_l_t pc;
-		reg_l_t m, t;
-	} r;
+	int clock_m, clock_t;
+	bool iff; // interupt flipflop
 
 	z80mmu mmu;
 	z80alu alu;
+	z80register af, bc, de, hl, sp, pc;
+	bool setticks;
 
-	reg_s_t* getregister(int code);
-	reg_s_t* getregisterpair(int code, bool first);
-	reg_l_t getSPval();
+	quint8 getbytearg();
+	quint16 getwordarg();
+	quint8 getbyteregisterval(int code);
+	void setbyteregisterval(int code, quint8 val);
+	quint16 getwordregisterval(int code, bool lastsp);
+	void setwordregisterval(int code, bool lastsp, quint16 val);
+	void addticks(int m, int t);
 
-	reg_s_t getbytearg();
-	void call(reg_s_t opcode);
-	void addticks(reg_l_t m, reg_l_t t);
-
-	reg_s_t alu_add(reg_s_t &a, reg_s_t &b);
-
-	void op_invalid();
+	void call(quint8 opcode);
 
 	void op_nop();
 	void op_ld_r_r(int arg1, int arg2);
@@ -51,6 +42,27 @@ private:
 	void op_ld_dd_nn(int arg);
 	void op_ld_sp_hl();
 	void op_push_qq(int arg);
+	void op_pop_qq(int arg);
+	void op_add_r(int arg, bool withcarry);
+	void op_add_n(bool withcarry);
+	void op_sub_r(int arg, bool withcarry);
+	void op_sub_n(bool withcarry);
+	void op_and_r(int arg);
+	void op_and_n();
+	void op_or_r(int arg);
+	void op_or_n();
+	void op_xor_r(int arg);
+	void op_xor_n();
+	void op_cp_r(int arg);
+	void op_cp_n();
+	void op_inc_r(int arg);
+	void op_dec_r(int arg);
+	void op_cpl();
+	void op_ccf();
+	void op_scf();
+	void op_halt();
+	void op_di();
+	void op_ei();
 };
 
 #endif // Z80_H
