@@ -266,7 +266,7 @@ void z80::op_ld_ahl_nn(int arg) {
 			addticks(4, 13);
 			break;
 		}
-		if (arg && 1) {
+		if (arg & 1) {
 			af.sethi(mmu.readbyte(addr));
 		} else {
 			mmu.writebyte(addr, af.gethi());
@@ -287,12 +287,12 @@ void z80::op_ld_sp_hl() {
 
 void z80::op_push_qq(int arg) {
 	sp -= 2;
-	mmu.writebyte(sp.getfull(), getwordregisterval(arg, false));
+	mmu.writeword(sp.getfull(), getwordregisterval(arg, false));
 	addticks(3, 11);
 }
 
 void z80::op_pop_qq(int arg) {
-	setwordregisterval(arg, false, mmu.readbyte(sp.getfull()));
+	setwordregisterval(arg, false, mmu.readword(sp.getfull()));
 	sp += 2;
 	addticks(3, 10);
 }
