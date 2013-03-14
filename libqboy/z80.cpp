@@ -160,6 +160,16 @@ void z80::call(quint8 opcode) {
 		case 1:
 			if ((mid3 & 1) == 0) op_pop_qq(mid2);
 			break;
+		case 3:
+			switch (mid3) {
+			case 6:
+				op_di();
+				break;
+			case 7:
+				op_ei();
+				break;
+			}
+			break;
 		case 5:
 			if ((mid3 & 1) == 0) op_push_qq(mid2);
 			break;
@@ -419,8 +429,10 @@ void z80::op_halt() {
 
 void z80::op_di() {
 	iff = false;
+	addticks(1, 4);
 }
 
 void z80::op_ei() {
 	iff = true;
+	addticks(1, 4);
 }
