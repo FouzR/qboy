@@ -34,6 +34,7 @@ private:
 	void addticks(int m, int t);
 
 	void call(quint8 opcode);
+	void call_extended();
 
 	void op_nop();
 	void op_ld_r_r(int arg1, int arg2);
@@ -63,6 +64,19 @@ private:
 	void op_halt();
 	void op_di();
 	void op_ei();
+	void op_add16_rr(int arg);
+	void op_inc16_rr(int arg);
+	void op_dec16_rr(int arg);
+	void op_rdca(Direction dir);
+	void op_rda(Direction dir);
+	void op_rdc_r(int arg, Direction dir);
+	void op_rd_r(int arg, Direction dir);
+	void op_sda(int arg, Direction dir);
+	void op_srl(int arg);
+	void op_bit(int bit, int arg);
+	void op_set(int bit, int arg);
+	void op_res(int bit, int arg);
+	void op_jump();
 };
 
 #endif // Z80_H

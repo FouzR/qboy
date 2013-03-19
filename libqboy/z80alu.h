@@ -7,7 +7,7 @@
 class z80alu {
 public:
 	z80alu();
-	void setflagregister(z80register *afregister);
+	void setregisters(z80register *afregister, z80register *hlregister);
 	void add(quint8 val, bool withcarry);
 	void sub(quint8 val, bool withcarry);
 	void land(quint8 val);
@@ -19,8 +19,16 @@ public:
 	void cpl();
 	void ccf();
 	void scf();
+	void add16(quint16 val);
+	quint8 rr(quint8 val, bool zflag = true);
+	quint8 rrc(quint8 val, bool zflag = true);
+	quint8 rl(quint8 val, bool zflag = true);
+	quint8 rlc(quint8 val, bool zflag = true);
+	quint8 sla(quint8 val);
+	quint8 sra(quint8 val);
+	quint8 srl(quint8 val);
 private:
-	z80register *af;
+	z80register *af, *hl;
 };
 
 #endif // Z80ALU_H

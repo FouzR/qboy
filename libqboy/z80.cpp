@@ -7,9 +7,7 @@ z80::z80() {
 }
 
 void z80::cycle() {
-	pc += 1;
-	int op = mmu.readbyte(pc.getfull());
-	call(op);
+	call(getbytearg());
 
 	if (!setticks) assert(false && "No ticks added! (incorrect or no instruction)");
 	setticks = false;
@@ -28,7 +26,7 @@ void z80::reset() {
 	pc.reset();
 	sp.reset();
 
-	alu.setflagregister(&af);
+	alu.setregisters(&af, &hl);
 }
 
 quint8 z80::getbyteregisterval(int code) {
@@ -83,7 +81,8 @@ quint8 z80::getbytearg() {
 
 quint16 z80::getwordarg() {
 	quint16 retval;
-	retval = mmu.readbyte(pc.getfull()) << 8;
+	retval = mmu.readbyte(pc.getfull());
+	retval <<= 8;
 	pc += 1;
 	retval |= mmu.readbyte(pc.getfull());
 	pc += 1;
@@ -110,7 +109,13 @@ void z80::call(quint8 opcode) {
 			if (mid3 == 0) op_nop();
 			break;
 		case 1:
-			if ((mid3 & 1) == 0) op_ld_dd_nn(mid2); break;
+			if ((mid3 & 1) == 0) op_ld_dd_nn(mid2);
+			else op_add16_rr(mid2);
+			break;
+		case 3:
+			if ((mid3 & 1) == 0) op_inc16_rr(mid2);
+			else op_dec16_rr(mid2);
+			break;
 		case 2:
 			op_ld_ahl_nn(mid3); break;
 		case 4:
@@ -121,6 +126,14 @@ void z80::call(quint8 opcode) {
 			op_ld_r_n(mid3); break;
 		case 7:
 			switch (mid3) {
+			case 0:
+				op_rdca(Direction::LEFT); break;
+			case 1:
+				op_rdca(Direction::RIGHT); break;
+			case 2:
+				op_rda(Direction::LEFT); break;
+			case 3:
+				op_rda(Direction::RIGHT); break;
 			case 5:
 				op_cpl(); break;
 			case 6:
@@ -159,15 +172,18 @@ void z80::call(quint8 opcode) {
 		switch (low3) {
 		case 1:
 			if ((mid3 & 1) == 0) op_pop_qq(mid2);
+			else if (mid3 == 7) op_ld_sp_hl();
 			break;
 		case 3:
 			switch (mid3) {
+			case 0:
+				op_jump(); break;
+			case 1:
+				call_extended(); break;
 			case 6:
-				op_di();
-				break;
+				op_di(); break;
 			case 7:
-				op_ei();
-				break;
+				op_ei(); break;
 			}
 			break;
 		case 5:
@@ -194,12 +210,47 @@ void z80::call(quint8 opcode) {
 			}
 			break;
 		}
-
-		if (opcode == 0xF9) op_ld_sp_hl(); // 11 11 1001
 		break;
 	}
+}
 
-	return;
+void z80::call_extended() {
+	int opcode = getbytearg();
+	int arg = opcode & 7;
+	opcode >>= 3;
+
+	int hi2 = opcode >> 3;
+	int mid3 = opcode & 7;
+
+	switch (hi2) {
+	case 0:
+		switch (mid3) {
+		case 0:
+			op_rdc_r(arg, Direction::LEFT); break;
+		case 1:
+			op_rdc_r(arg, Direction::RIGHT); break;
+		case 2:
+			op_rd_r(arg, Direction::LEFT); break;
+		case 3:
+			op_rd_r(arg, Direction::RIGHT); break;
+		case 4:
+			op_sda(arg, Direction::LEFT); break;
+		case 5:
+			op_sda(arg, Direction::RIGHT); break;
+		case 6:
+			// TODO: swap
+			break;
+		case 7:
+			op_srl(arg); break;
+		}
+		break;
+	case 1:
+		op_bit(mid3, arg); break;
+	case 2:
+		op_res(mid3, arg); break;
+	case 3:
+		op_set(mid3, arg); break;
+	}
 }
 
 void z80::op_nop() {
@@ -435,4 +486,192 @@ void z80::op_di() {
 void z80::op_ei() {
 	iff = true;
 	addticks(1, 4);
+}
+
+void z80::op_add16_rr(int arg) {
+	alu.add16(getwordregisterval(arg, true));
+	addticks(3, 11);
+}
+
+void z80::op_inc16_rr(int arg) {
+	setwordregisterval(arg, true, getwordregisterval(arg, true) + 1);
+	addticks(1, 6);
+}
+
+void z80::op_dec16_rr(int arg) {
+	setwordregisterval(arg, true, getwordregisterval(arg, true) - 1);
+	addticks(1, 6);
+}
+
+void z80::op_rdca(Direction dir) {
+	quint8 ans = af.gethi();
+	if (dir == Direction::LEFT) {
+		ans = alu.rlc(ans, false);
+	} else {
+		ans = alu.rrc(ans, false);
+	}
+	af.sethi(ans);
+
+	addticks(1, 4);
+}
+
+void z80::op_rda(Direction dir) {
+	quint8 ans = af.gethi();
+	if (dir == Direction::LEFT) {
+		ans = alu.rl(ans, false);
+	} else {
+		ans = alu.rr(ans, false);
+	}
+	af.sethi(ans);
+
+	addticks(1, 4);
+}
+
+void z80::op_rdc_r(int arg, Direction dir) {
+	quint8 ans;
+	if (arg == 6) {
+		quint16 addr = hl.getfull();
+		ans = mmu.readbyte(addr);
+		if (dir == Direction::LEFT) {
+			ans = alu.rlc(ans);
+		} else {
+			ans = alu.rrc(ans);
+		}
+		mmu.writebyte(addr, ans);
+
+		addticks(4, 15);
+	} else {
+		ans = getbyteregisterval(arg);
+		if (dir == Direction::LEFT) {
+			ans = alu.rlc(ans);
+		} else {
+			ans = alu.rrc(ans);
+		}
+		setbyteregisterval(arg, ans);
+
+		addticks(2, 8);
+	}
+}
+
+void z80::op_rd_r(int arg, Direction dir) {
+	quint8 ans;
+	if (arg == 6) {
+		quint16 addr = hl.getfull();
+		ans = mmu.readbyte(addr);
+		if (dir == Direction::LEFT) {
+			ans = alu.rl(ans);
+		} else {
+			ans = alu.rr(ans);
+		}
+		mmu.writebyte(addr, ans);
+
+		addticks(4, 15);
+	} else {
+		ans = getbyteregisterval(arg);
+		if (dir == Direction::LEFT) {
+			ans = alu.rl(ans);
+		} else {
+			ans = alu.rr(ans);
+		}
+		setbyteregisterval(arg, ans);
+
+		addticks(2, 8);
+	}
+}
+
+void z80::op_sda(int arg, Direction dir) {
+	quint8 ans;
+	if (arg == 6) {
+		quint16 addr = hl.getfull();
+		ans = mmu.readbyte(addr);
+		if (dir == Direction::LEFT) {
+			ans = alu.sla(ans);
+		} else {
+			ans = alu.sra(ans);
+		}
+		mmu.writebyte(addr, ans);
+
+		addticks(4, 15);
+	} else {
+		ans = getbyteregisterval(arg);
+		if (dir == Direction::LEFT) {
+			ans = alu.sla(ans);
+		} else {
+			ans = alu.sra(ans);
+		}
+		setbyteregisterval(arg, ans);
+
+		addticks(2, 8);
+	}
+}
+
+void z80::op_srl(int arg) {
+	quint8 ans;
+	if (arg == 6) {
+		quint16 addr = hl.getfull();
+		ans = mmu.readbyte(addr);
+		ans = alu.srl(ans);
+		mmu.writebyte(addr, ans);
+
+		addticks(4, 15);
+	} else {
+		ans = getbyteregisterval(arg);
+		ans = alu.srl(ans);
+		setbyteregisterval(arg, ans);
+
+		addticks(2, 8);
+	}
+}
+
+void z80::op_bit(int bit, int arg) {
+	quint8 ans;
+	quint8 test = (1 << bit);
+	if (arg == 6) {
+		quint16 addr = hl.getfull();
+		ans = mmu.readbyte(addr);
+		af.setflag('z', ans & test);
+		addticks(3, 12);
+	} else {
+		ans = getbyteregisterval(arg);
+		af.setflag('z', ans & test);
+		addticks(2, 8);
+	}
+}
+
+void z80::op_set(int bit, int arg) {
+	quint8 ans;
+	quint8 test = (1 << bit);
+
+	if (arg == 6) {
+		quint16 addr = hl.getfull();
+		ans = mmu.readbyte(addr);
+		mmu.writebyte(addr, ans | test);
+		addticks(4, 15);
+	} else {
+		ans = getbyteregisterval(arg);
+		setbyteregisterval(arg, ans | test);
+		addticks(2, 8);
+	}
+}
+
+void z80::op_res(int bit, int arg) {
+	quint8 ans;
+	quint8 test = (1 << bit);
+	test = ~test;
+
+	if (arg == 6) {
+		quint16 addr = hl.getfull();
+		ans = mmu.readbyte(addr);
+		mmu.writebyte(addr, ans & test);
+		addticks(4, 15);
+	} else {
+		ans = getbyteregisterval(arg);
+		setbyteregisterval(arg, ans & test);
+		addticks(2, 8);
+	}
+}
+
+void z80::op_jump() {
+	pc.setfull(getwordarg());
+	addticks(3, 10);
 }
