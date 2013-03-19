@@ -81,11 +81,15 @@ quint8 z80::getbytearg() {
 
 quint16 z80::getwordarg() {
 	quint16 retval;
-	retval = mmu.readbyte(pc.getfull());
+	quint8 byte1, byte2;
+
+	byte1 = getbytearg();
+	byte2 = getbytearg();
+
+	retval = byte2;
 	retval <<= 8;
-	pc += 1;
-	retval |= mmu.readbyte(pc.getfull());
-	pc += 1;
+	retval |= byte1;
+
 	return retval;
 }
 
