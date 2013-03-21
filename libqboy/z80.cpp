@@ -99,6 +99,22 @@ void z80::addticks(int m, int t) {
 	setticks = true;
 }
 
+bool z80::jumpcond(int arg) {
+	switch (arg) {
+	case 0:
+		return !af.getflag('z');
+	case 1:
+		return af.getflag('z');
+	case 2:
+		return !af.getflag('c');
+	case 3:
+		return af.getflag('c');
+	}
+
+	assert(false && "Condition tested for non existing flag");
+	return false;
+}
+
 void z80::call(quint8 opcode) {
 	int hi2 = opcode >> 6;
 	int mid3 = (opcode >> 3) & 7;
@@ -111,17 +127,22 @@ void z80::call(quint8 opcode) {
 		switch (low3) {
 		case 0:
 			if (mid3 == 0) op_nop();
+			else if (mid3 == 1) op_ld_mm_sp();
+			else if (mid3 == 2) ; // STOP goes here
+			else if (mid3 >= 3) op_jump_rel(mid3);
 			break;
 		case 1:
 			if ((mid3 & 1) == 0) op_ld_dd_nn(mid2);
 			else op_add16_rr(mid2);
 			break;
+		case 2:
+			if ((mid3 & 4) == 0) op_ld_a_ss(mid3);
+			else op_ld_a_hl(mid3);
+			break;
 		case 3:
 			if ((mid3 & 1) == 0) op_inc16_rr(mid2);
 			else op_dec16_rr(mid2);
 			break;
-		case 2:
-			op_ld_ahl_nn(mid3); break;
 		case 4:
 			op_inc_r(mid3); break;
 		case 5:
@@ -174,9 +195,23 @@ void z80::call(quint8 opcode) {
 		break;
 	case 3:
 		switch (low3) {
+		case 0:
+			if (mid3 < 4) op_ret_cond(mid3);
+			else if ((mid3 & 1) == 0) op_ld_a_n(mid3);
+			else if (mid3 == 5) op_ld_sp_sn();
+			else op_ld_hl_sp_sn();
+			break;
 		case 1:
 			if ((mid3 & 1) == 0) op_pop_qq(mid2);
-			else if (mid3 == 7) op_ld_sp_hl();
+			else if (mid3 == 1) op_ret();
+			else if (mid3 == 3) op_reti();
+			else if (mid3 == 5) op_jump_hl();
+			else op_ld_sp_hl();
+			break;
+		case 2:
+			if (mid3 < 4) op_jump_cond(mid3);
+			else if ((mid3 & 1) == 0) op_ld_a_c(mid3);
+			else op_ld_a_nn(mid3);
 			break;
 		case 3:
 			switch (mid3) {
@@ -190,8 +225,12 @@ void z80::call(quint8 opcode) {
 				op_ei(); break;
 			}
 			break;
+		case 4:
+			op_call_cond(mid3);
+			break;
 		case 5:
 			if ((mid3 & 1) == 0) op_push_qq(mid2);
+			else if (mid3 == 1) op_call();
 			break;
 		case 6:
 			switch (mid3) {
@@ -213,6 +252,8 @@ void z80::call(quint8 opcode) {
 				op_cp_n(); break;
 			}
 			break;
+		case 7:
+			op_rst_p(mid3);
 		}
 		break;
 	}
@@ -290,43 +331,37 @@ void z80::op_ld_r_n(int arg) {
 	}
 }
 
-void z80::op_ld_ahl_nn(int arg) {
+void z80::op_ld_a_ss(int arg) {
 	quint16 addr;
-	if (arg == 4 || arg == 5) {
-		addr = getwordarg();
-		if (arg == 5) {
-			hl.setfull(mmu.readword(addr));
-			// TODO: make sure readword works like this:
-			//r.l = mmu.readbyte(addr);
-			//r.h = mmu.readbyte(addr + 1);
-		} else {
-			mmu.writeword(addr, hl.getfull());
-			// TODO: make sure writeword works like this:
-			//mmu.writebyte(addr + 1, r.h);
-			//mmu.writebyte(addr, r.l);
-		}
-		addticks(5, 16);
+	if ((arg & 2) == 0) {
+		addr = bc.getfull();
 	} else {
-		switch (arg >> 1) {
-		case 0:
-			addr = bc.getfull();
-			addticks(2, 7);
-			break;
-		case 1:
-			addr = de.getfull();
-			addticks(2, 7);
-			break;
-		case 3:
-			addr = getwordarg();
-			addticks(4, 13);
-			break;
-		}
-		if (arg & 1) {
-			af.sethi(mmu.readbyte(addr));
-		} else {
-			mmu.writebyte(addr, af.gethi());
-		}
+		addr = de.getfull();
 	}
+
+	if (arg & 1) {
+		af.sethi(mmu.readbyte(addr));
+	} else {
+		mmu.writebyte(addr, af.gethi());
+	}
+
+	addticks(2, 7);
+}
+
+void z80::op_ld_a_hl(int arg) {
+	if (arg & 1) {
+		af.sethi(mmu.readbyte(hl.getfull()));
+	} else {
+		mmu.writebyte(hl.getfull(), af.gethi());
+	}
+
+	if (arg & 2) {
+		hl -= 1;
+	} else {
+		hl += 1;
+	}
+
+	addticks(2, 7);
 }
 
 void z80::op_ld_dd_nn(int arg) {
@@ -678,4 +713,132 @@ void z80::op_res(int bit, int arg) {
 void z80::op_jump() {
 	pc.setfull(getwordarg());
 	addticks(3, 10);
+}
+
+void z80::op_jump_cond(int arg) {
+	quint16 jumpaddr = getwordarg();
+
+	if (jumpcond(arg)) pc.setfull(jumpaddr);
+	addticks(3, 10);
+}
+
+void z80::op_jump_rel(int arg) {
+	qint8 addr = getbytearg() + 2;
+	bool jump = false;
+
+	if (arg == 3) jump = true;
+	else jump = jumpcond(arg & 3);
+
+	if (jump) {
+		pc += addr;
+		addticks(3, 12);
+	} else {
+		addticks(2, 7);
+	}
+}
+
+void z80::op_jump_hl() {
+	pc.setfull(hl.getfull());
+	addticks(1, 4);
+}
+
+void z80::op_call() {
+	quint16 addr = getwordarg();
+
+	mmu.writebyte(sp.getfull() - 1, pc.gethi());
+	mmu.writebyte(sp.getfull() - 2, pc.getlo());
+	sp -= 2;
+
+	pc.setfull(addr);
+	addticks(5, 17);
+}
+
+void z80::op_call_cond(int arg) {
+	if (jumpcond(arg)) {
+		op_call();
+	} else {
+		pc += 2;
+		addticks(3, 10);
+	}
+}
+
+void z80::op_ret() {
+	pc.setfull(mmu.readword(sp.getfull()));
+	sp += 2;
+	addticks(3, 10);
+}
+
+void z80::op_ret_cond(int arg) {
+	if (jumpcond(arg)) {
+		op_ret();
+	} else {
+		addticks(1, 5);
+	}
+}
+
+void z80::op_reti() {
+	iff = true;
+	// TODO: check if addticks 1,4 is needed (i.e., calling ei())
+	op_ret();
+}
+
+void z80::op_rst_p(int arg) {
+	quint8 addr = (0x10 * (arg >> 1)) + ((arg & 1) * 0x08);
+
+	mmu.writebyte(sp.getfull() - 1, pc.gethi());
+	mmu.writebyte(sp.getfull() - 2, pc.getlo());
+	sp -= 2;
+
+	pc.setfull(addr);
+
+	addticks(3, 11);
+}
+
+void z80::op_ld_mm_sp() {
+	assert(false && "ld_mm_sp should have been implemented...");
+	mmu.writeword(getwordarg(), sp.getfull());
+	// TODO: figure out addticks
+}
+
+void z80::op_ld_a_n(int arg) {
+	quint16 addr = 0xFF00 | getbytearg();
+	if ((arg & 2) == 0) {
+		mmu.writebyte(addr, af.gethi());
+	} else {
+		af.sethi(mmu.readbyte(addr));
+	}
+	addticks(3, 11);
+}
+
+void z80::op_ld_sp_sn() {
+	qint8 offset = getbytearg();
+	sp += offset;
+	addticks(4, 16); // TODO: refine 16
+}
+
+void z80::op_ld_hl_sp_sn() {
+	qint8 offset = getbytearg();
+	quint16 val = sp.getfull() + offset;
+	hl.setfull(val);
+	addticks(3, 12); // TODO: refine 12
+}
+
+void z80::op_ld_a_c(int arg) {
+	quint16 addr = 0xFF00 | bc.getlo();
+	if ((arg & 2) == 0) {
+		mmu.writebyte(addr, af.gethi());
+	} else {
+		af.sethi(mmu.readbyte(addr));
+	}
+	addticks(2, 8); // TODO: refine 8
+}
+
+void z80::op_ld_a_nn(int arg) {
+	quint16 addr = getwordarg();
+	if ((arg & 2) == 0) {
+		mmu.writebyte(addr, af.gethi());
+	} else {
+		af.sethi(mmu.readbyte(addr));
+	}
+	addticks(4, 16); // TODO: refine 16
 }

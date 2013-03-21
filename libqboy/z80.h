@@ -33,13 +33,16 @@ private:
 	void setwordregisterval(int code, bool lastsp, quint16 val);
 	void addticks(int m, int t);
 
+	bool jumpcond(int arg);
+
 	void call(quint8 opcode);
 	void call_extended();
 
 	void op_nop();
 	void op_ld_r_r(int arg1, int arg2);
 	void op_ld_r_n(int arg);
-	void op_ld_ahl_nn(int arg);
+	void op_ld_a_ss(int arg);
+	void op_ld_a_hl(int arg);
 	void op_ld_dd_nn(int arg);
 	void op_ld_sp_hl();
 	void op_push_qq(int arg);
@@ -77,6 +80,21 @@ private:
 	void op_set(int bit, int arg);
 	void op_res(int bit, int arg);
 	void op_jump();
+	void op_jump_cond(int arg);
+	void op_jump_rel(int arg);
+	void op_jump_hl();
+	void op_call();
+	void op_call_cond(int arg);
+	void op_ret();
+	void op_ret_cond(int arg);
+	void op_reti();
+	void op_rst_p(int arg);
+	void op_ld_mm_sp();
+	void op_ld_a_n(int arg);
+	void op_ld_sp_sn();
+	void op_ld_hl_sp_sn();
+	void op_ld_a_c(int arg);
+	void op_ld_a_nn(int arg);
 };
 
 #endif // Z80_H
