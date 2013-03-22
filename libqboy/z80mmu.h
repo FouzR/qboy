@@ -3,12 +3,15 @@
 
 #include "libqboy_global.h"
 
+#include "gbgpu.h"
+
 #include <istream>
 #include <vector>
 
 class z80mmu {
 public:
 	z80mmu();
+	void setgpu(gbgpu *gpu);
 	void reset();
 	void load(std::istream &in);
 	void outofbios();
@@ -19,6 +22,7 @@ public:
 
 private:
 	bool inbios;
+	gbgpu *gpu;
 	std::vector<quint8> bios, rom, eram, wram, zram;
 };
 

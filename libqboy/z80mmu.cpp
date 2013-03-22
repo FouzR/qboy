@@ -4,6 +4,10 @@ z80mmu::z80mmu() {
 	reset();
 }
 
+void z80mmu::setgpu(gbgpu *gpu) {
+	this->gpu = gpu;
+}
+
 void z80mmu::reset() {
 	const int bios_arr[] = {0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32, 0xCB, 0x7C, 0x20, 0xFB, 0x21, 0x26, 0xFF, 0x0E,
 							0x11, 0x3E, 0x80, 0x32, 0xE2, 0x0C, 0x3E, 0xF3, 0xE2, 0x32, 0x3E, 0x77, 0x77, 0x3E, 0xFC, 0xE0,
@@ -61,8 +65,8 @@ quint8 z80mmu::readbyte(quint16 address) {
 		return rom[address];
 
 	// VRAM
-	//case 0x8000: case 0x9000:
-	//	return GPU._vram[addr&0x1FFF];
+	case 0x8000: case 0x9000:
+		return gpu->getvram(address & 0x1FFF);
 
 	// External RAM
 	case 0xA000: case 0xB000:
@@ -122,8 +126,7 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 
 	// VRAM
 	case 0x8000: case 0x9000:
-	//	GPU._vram[addr&0x1FFF] = val;
-	//	GPU.updatetile(addr&0x1FFF, val);
+		gpu->setvram(address & 0x1FFF, value);
 		break;
 
 	// External RAM

@@ -3,8 +3,7 @@
 
 #include "libqboy_global.h"
 
-class LIBQBOYSHARED_EXPORT libqboy
-{
+class LIBQBOYSHARED_EXPORT libqboy {
 public:
 	libqboy();
 };
