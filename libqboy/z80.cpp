@@ -75,6 +75,7 @@ void z80::setwordregisterval(int code, bool lastsp, quint16 val) {
 
 quint8 z80::getbytearg() {
 	quint8 retval = mmu.readbyte(pc.getfull());
+	if (pc.getfull() == 0x0100) mmu.outofbios();
 	pc += 1;
 	return retval;
 }
@@ -120,7 +121,6 @@ void z80::call(quint8 opcode) {
 	int mid3 = (opcode >> 3) & 7;
 	int low3 = opcode & 7;
 	int mid2 = (opcode >> 4) & 3;
-	int low4 = opcode & 15;
 
 	switch (hi2) {
 	case 0:
