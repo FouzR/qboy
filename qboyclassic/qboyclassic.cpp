@@ -13,7 +13,7 @@ QBoyClassic::QBoyClassic(QWidget *parent) :
 
 
 
-	std::ifstream fin("cpu_instrs.gb");
+	std::ifstream fin("opus5.gb", std::ios_base::in | std::ios_base::binary);
 	if (!fin.is_open()) {
 		assert(false && "Could not open file");
 	}
