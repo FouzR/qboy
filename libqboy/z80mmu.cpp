@@ -28,7 +28,7 @@ void z80mmu::reset() {
 	bios = std::vector<quint8>(bios_arr, bios_arr + sizeof(bios_arr) / sizeof(bios_arr[0]));
 	inbios = true;
 
-	rom.resize(16384*2, 0);
+	rom.resize(0x10000, 0);
 	eram.resize(8192, 0);
 	wram.resize(8192, 0);
 	zram.resize(128, 0);
@@ -37,8 +37,9 @@ void z80mmu::reset() {
 void z80mmu::load(std::istream &in) {
 	char byte;
 	int pos = 0;
-	while (in.read(&byte, 1) && pos <= 16384*2) {
-		rom[++pos] = byte;
+	while (pos <= 0xFFFF) {
+		in.read(&byte, 1);
+		rom[pos++] = byte;
 	}
 }
 
