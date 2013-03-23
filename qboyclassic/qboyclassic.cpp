@@ -1,45 +1,32 @@
 #include "qboyclassic.h"
 #include "ui_qboyclassic.h"
 
-#include <fstream>
-#include <cassert>
-
 QBoyClassic::QBoyClassic(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::QBoyClassic)
-{
+	ui(new Ui::QBoyClassic) {
+
 	ui->setupUi(this);
-	qboy = new libqboy;
 
+	// Repaint the label at set intervals
+	timer = new QTimer();
+	timer->setInterval(25);
+	connect(timer, SIGNAL(timeout()), ui->label, SLOT(repaint()));
+	timer->start();
 
+	// Create gameboy
+	qboyt = new qboythread("opus5.gb");
+	qboyt->start();
 
-	std::ifstream fin("opus5.gb", std::ios_base::in | std::ios_base::binary);
-	if (!fin.is_open()) {
-		assert(false && "Could not open file");
-	}
-	qboy->loadgame(fin);
-	fin.close();
-
+	ui->label->image = new QImage(qboyt->getLCD(), 160, 144, QImage::Format_RGB32);
 }
 
-QBoyClassic::~QBoyClassic()
-{
+QBoyClassic::~QBoyClassic() {
+	delete timer;
+	delete qboyt;
 	delete ui;
 }
 
+
 void QBoyClassic::on_pushButton_clicked() {
-
-	int c = 10000000;
-	ui->pushButton->setText("Busy");
-
-	while (c--) {
-		qboy->cycle();
-		if (qboy->doupdate()) {
-			QImage qboylcd(qboy->getLCD(), 160, 144, QImage::Format_RGB32);
-			ui->label->setPixmap(QPixmap::fromImage(qboylcd));
-			QApplication::processEvents();
-		}
-	}
-
-	ui->pushButton->setText("Done");
+	qboyt->stop();
 }

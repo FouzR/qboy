@@ -17,6 +17,7 @@ public:
 	void loadgame(std::istream &in);
 	void cycle();
 	bool doupdate();
+	int get_elapsed_time();
 private:
 	z80 cpu;
 	z80mmu mmu;

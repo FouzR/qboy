@@ -13,9 +13,11 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        qboyclassic.cpp
+        qboyclassic.cpp \
+    qboythread.cpp
 
-HEADERS  += qboyclassic.h
+HEADERS  += qboyclassic.h \
+    qboythread.h
 
 FORMS    += qboyclassic.ui
 

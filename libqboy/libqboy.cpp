@@ -31,3 +31,7 @@ bool libqboy::doupdate() {
 	}
 	return false;
 }
+
+int libqboy::get_elapsed_time() {
+	return cpu.get_t();
+}
