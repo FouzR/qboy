@@ -32,6 +32,8 @@ private:
 	void setbyteregisterval(int code, quint8 val);
 	quint16 getwordregisterval(int code, bool lastsp);
 	void setwordregisterval(int code, bool lastsp, quint16 val);
+	void pushstack(quint16 val);
+	quint16 popstack();
 	void addticks(int m, int t);
 
 	bool jumpcond(int arg);

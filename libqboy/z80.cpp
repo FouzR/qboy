@@ -81,8 +81,8 @@ void z80::setwordregisterval(int code, bool lastsp, quint16 val) {
 
 quint8 z80::getbytearg() {
 	quint8 retval = mmu->readbyte(pc.getfull());
-	if (pc.getfull() == 0x0100) mmu->outofbios();
 	pc += 1;
+	if (pc.getfull() == 0x0100) mmu->outofbios();
 	return retval;
 }
 
@@ -98,6 +98,22 @@ quint16 z80::getwordarg() {
 	retval |= byte1;
 
 	return retval;
+}
+
+void z80::pushstack(quint16 val) {
+	sp -= 1;
+	mmu->writebyte(sp.getfull(), val >> 8);
+	sp -= 1;
+	mmu->writebyte(sp.getfull(), val & 0xFF);
+}
+
+quint16 z80::popstack() {
+	quint16 hi, lo;
+	lo = mmu->readbyte(sp.getfull());
+	sp += 1;
+	hi = mmu->readbyte(sp.getfull());
+	sp += 1;
+	return (hi << 8) | lo;
 }
 
 void z80::addticks(int m, int t) {
@@ -123,7 +139,7 @@ bool z80::jumpcond(int arg) {
 }
 
 void z80::call(quint8 opcode) {
-	std::cerr << "Opcode: " << std::hex << (int)opcode << std::endl;
+	std::cerr << "PC: " << (int)pc.getfull() << ", opcode: " << std::hex << (int)opcode << std::endl;
 	int hi2 = opcode >> 6;
 	int mid3 = (opcode >> 3) & 7;
 	int low3 = opcode & 7;
@@ -383,14 +399,12 @@ void z80::op_ld_sp_hl() {
 }
 
 void z80::op_push_qq(int arg) {
-	mmu->writeword(sp.getfull() - 1, getwordregisterval(arg, false));
-	sp -= 2;
+	pushstack(getwordregisterval(arg, false));	
 	addticks(3, 11);
 }
 
 void z80::op_pop_qq(int arg) {
-	setwordregisterval(arg, false, mmu->readword(sp.getfull() + 1));
-	sp += 2;
+	setwordregisterval(arg, false, popstack());
 	addticks(3, 10);
 }
 
@@ -752,8 +766,7 @@ void z80::op_jump_hl() {
 void z80::op_call() {
 	quint16 addr = getwordarg();
 
-	mmu->writebyte(sp.getfull() - 1, pc.getfull());
-	sp -= 2;
+	pushstack(pc.getfull());
 
 	pc.setfull(addr);
 	addticks(5, 17);
@@ -769,8 +782,7 @@ void z80::op_call_cond(int arg) {
 }
 
 void z80::op_ret() {
-	pc.setfull(mmu->readword(sp.getfull() + 1));
-	sp += 2;
+	pc.setfull(popstack());
 	addticks(3, 10);
 }
 
@@ -791,10 +803,7 @@ void z80::op_reti() {
 void z80::op_rst_p(int arg) {
 	quint8 addr = (0x10 * (arg >> 1)) + ((arg & 1) * 0x08);
 
-	mmu->writebyte(sp.getfull() - 1, pc.gethi());
-	mmu->writebyte(sp.getfull() - 2, pc.getlo());
-	sp -= 2;
-
+	pushstack(pc.getfull());
 	pc.setfull(addr);
 
 	addticks(3, 11);
