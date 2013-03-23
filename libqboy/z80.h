@@ -13,14 +13,15 @@ enum Direction {
 
 class z80 {
 public:
-	z80();
+	z80(z80mmu *mmu);
 	void reset();
 	void cycle();
+	int get_t();
 private:
 	int clock_m, clock_t;
 	bool iff; // interupt flipflop
 
-	z80mmu mmu;
+	z80mmu *mmu;
 	z80alu alu;
 	z80register af, bc, de, hl, sp, pc;
 	bool setticks;

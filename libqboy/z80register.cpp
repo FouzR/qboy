@@ -9,34 +9,34 @@ void z80register::reset() {
 	lo = 0;
 }
 
-void z80register::setfull(qint16 val) {
+void z80register::setfull(quint16 val) {
 	lo = val & 255;
 	hi = val >> 8;
 }
 
-void z80register::setfull(qint8 hival, qint8 loval) {
+void z80register::setfull(quint8 hival, quint8 loval) {
 	lo = loval;
 	hi = hival;
 }
 
-void z80register::setlo(qint8 val) {
+void z80register::setlo(quint8 val) {
 	lo = val;
 }
 
-void z80register::sethi(qint8 val) {
+void z80register::sethi(quint8 val) {
 	hi = val;
 }
 
-qint16 z80register::getfull() {
-	qint16 retval = hi << 8 | lo;
+quint16 z80register::getfull() {
+	quint16 retval = hi << 8 | lo;
 	return retval;
 }
 
-qint8 z80register::getlo() {
+quint8 z80register::getlo() {
 	return lo;
 }
 
-qint8 z80register::gethi() {
+quint8 z80register::gethi() {
 	return hi;
 }
 
@@ -51,11 +51,11 @@ void z80register::setflag(char type, bool val) {
 	else if (lo & bit) lo -= bit;
 }
 
-void z80register::operator+=(qint16 val) {
+void z80register::operator+=(quint16 val) {
 	setfull(getfull() + val);
 }
 
-void z80register::operator-=(qint16 val) {
+void z80register::operator-=(quint16 val) {
 	setfull(getfull() - val);
 }
 

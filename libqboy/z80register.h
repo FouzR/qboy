@@ -7,20 +7,20 @@ class z80register {
 public:
 	z80register();
 	void reset();
-	void setfull(qint16 val);
-	void setfull(qint8 hival, qint8 loval);
-	void setlo(qint8 val);
-	void sethi(qint8 val);
-	qint16 getfull();
-	qint8 getlo();
-	qint8 gethi();
+	void setfull(quint16 val);
+	void setfull(quint8 hival, quint8 loval);
+	void setlo(quint8 val);
+	void sethi(quint8 val);
+	quint16 getfull();
+	quint8 getlo();
+	quint8 gethi();
 	bool getflag(char type);
 	void setflag(char type, bool val);
 
-	void operator+=(qint16 val);
-	void operator-=(qint16 val);
+	void operator+=(quint16 val);
+	void operator-=(quint16 val);
 private:
-	qint8 hi, lo;
+	quint8 hi, lo;
 	int getflagmask(char type);
 };
 

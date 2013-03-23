@@ -31,7 +31,7 @@ void z80mmu::reset() {
 	rom.resize(16384, 0);
 	eram.resize(8192, 0);
 	wram.resize(8192, 0);
-	zram.resize(127, 0);
+	zram.resize(128, 0);
 }
 
 void z80mmu::load(std::istream &in) {
@@ -103,7 +103,7 @@ quint8 z80mmu::readbyte(quint16 address) {
 				case 0x10: case 0x20: case 0x30:
 					return 0;
 				case 0x40: case 0x50: case 0x60: case 0x70:
-					return gpu->getvram(address);
+					return gpu->getvreg(address);
 				}
 			}
 		}
@@ -179,7 +179,7 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 				case 0x10: case 0x20: case 0x30:
 					break;
 				case 0x40: case 0x50: case 0x60: case 0x70:
-					gpu->setvram(address, value);
+					gpu->setvreg(address, value);
 					break;
 				}
 			}
