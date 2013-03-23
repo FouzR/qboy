@@ -14,12 +14,24 @@ public:
 	void step(int z80t);
 	void setvram(quint16 address, quint8 val);
 	quint8 getvram(quint16 address);
+	void setvreg(quint16 address, quint8 val);
+	quint8 getvreg(quint16 address);
 private:
 	quint8 screen_buffer[_GBGPU_W][_GBGPU_H][4];
 	int mode;
 	int modeclock;
 	int line;
-	std::vector<quint8> vram;
+	quint8 pallete_bg[4], pallete_obj0[4], pallete_obj1[4];
+	bool lcd_on;
+	quint16 bgtilebase;
+	quint16 bgmapbase;
+	bool objsize;
+	bool obj_on;
+	bool bg_on;
+	quint8 yscroll, xscroll, raster;
+
+
+	std::vector<quint8> vram, vreg;
 
 	void renderscan();
 	void updatebuffer();

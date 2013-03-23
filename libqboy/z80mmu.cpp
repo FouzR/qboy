@@ -94,7 +94,18 @@ quint8 z80mmu::readbyte(quint16 address) {
 
 		// Zeropage RAM, I/O
 		case 0xF00:
-			if(address > 0xFF7F) { return zram[address & 0x7F]; }
+			if(address > 0xFF7F) {
+				return zram[address & 0x7F];
+			} else {
+				switch(address & 0xF0) {
+				case 0x00:
+					return 0; // TODO
+				case 0x10: case 0x20: case 0x30:
+					return 0;
+				case 0x40: case 0x50: case 0x60: case 0x70:
+					return gpu->getvram(address);
+				}
+			}
 		}
 	}
 
@@ -159,9 +170,18 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 
 			// Zeropage RAM, I/O
 		case 0xF00:
-			if(address > 0xFF7F) { zram[address & 0x7F] = value; }
-			else {
-				//?
+			if(address > 0xFF7F) {
+				zram[address & 0x7F] = value;
+			} else {
+				switch(address & 0xF0) {
+				case 0x00:
+					break;
+				case 0x10: case 0x20: case 0x30:
+					break;
+				case 0x40: case 0x50: case 0x60: case 0x70:
+					gpu->setvram(address, value);
+					break;
+				}
 			}
 		}
 		break;
