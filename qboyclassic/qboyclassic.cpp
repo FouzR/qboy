@@ -32,7 +32,6 @@ void QBoyClassic::on_pushButton_clicked() {
 	int c = 10000000;
 	ui->pushButton->setText("Busy");
 
-	int x = 0;
 	while (c--) {
 		qboy->cycle();
 		if (qboy->doupdate()) {

@@ -9,9 +9,14 @@ z80::z80(z80mmu *mmu) {
 }
 
 void z80::cycle() {
-	call(getbytearg());
+	quint16 progcount = pc.getfull();
+	quint8 opcode = getbytearg();
+	call(opcode);
 
-	if (!setticks) assert(false && "No ticks added! (incorrect or no instruction)");
+	if (!setticks || assfailed) {
+		std::cerr << "PC: " << progcount << ", opcode: " << std::hex << (int)opcode << std::endl;
+		assert(false && "Opcode failed!!");
+	}
 	setticks = false;
 }
 
@@ -19,6 +24,7 @@ void z80::reset() {
 	clock_m = 0;
 	clock_t = 0;
 	setticks = false;
+	assfailed = false;
 	iff = false;
 
 	af.reset();
@@ -134,12 +140,12 @@ bool z80::jumpcond(int arg) {
 		return af.getflag('c');
 	}
 
-	assert(false && "Condition tested for non existing flag");
+	assfailed = true;
+
 	return false;
 }
 
 void z80::call(quint8 opcode) {
-	//std::cerr << "PC: " << (int)pc.getfull() << ", opcode: " << std::hex << (int)opcode << std::endl;
 	int hi2 = opcode >> 6;
 	int mid3 = (opcode >> 3) & 7;
 	int low3 = opcode & 7;
@@ -151,7 +157,7 @@ void z80::call(quint8 opcode) {
 		case 0:
 			if (mid3 == 0) op_nop();
 			else if (mid3 == 1) op_ld_mm_sp();
-			else if (mid3 == 2) assert(false && "should have STOPped");
+			else if (mid3 == 2) ; // should have STOPped
 			else if (mid3 >= 3) op_jump_rel(mid3);
 			break;
 		case 1:
@@ -306,8 +312,7 @@ void z80::call_extended() {
 		case 5:
 			op_sda(arg, RIGHT); break;
 		case 6:
-			assert(false && "Swap not implemented");
-			break;
+			op_swap(arg); break;
 		case 7:
 			op_srl(arg); break;
 		}
@@ -856,4 +861,21 @@ void z80::op_ld_a_nn(int arg) {
 		af.sethi(mmu->readbyte(addr));
 	}
 	addticks(4, 16); // TODO: refine 16
+}
+
+void z80::op_swap(int arg) {
+	quint8 ans;
+
+	if (arg == 6) {
+		quint16 addr = hl.getfull();
+		ans = mmu->readbyte(addr);
+		ans = (ans >> 4) | (ans << 4);
+		mmu->writebyte(addr, ans);
+		addticks(4, 15);
+	} else {
+		ans = getbyteregisterval(arg);
+		ans = (ans >> 4) | (ans << 4);
+		setbyteregisterval(arg, ans);
+		addticks(2, 8);
+	}
 }

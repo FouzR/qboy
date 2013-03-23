@@ -25,6 +25,7 @@ private:
 	z80alu alu;
 	z80register af, bc, de, hl, sp, pc;
 	bool setticks;
+	bool assfailed;
 
 	quint8 getbytearg();
 	quint16 getwordarg();
@@ -98,6 +99,7 @@ private:
 	void op_ld_hl_sp_sn();
 	void op_ld_a_c(int arg);
 	void op_ld_a_nn(int arg);
+	void op_swap(int arg);
 };
 
 #endif // Z80_H
