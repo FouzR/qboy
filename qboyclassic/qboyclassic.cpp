@@ -12,7 +12,7 @@ QBoyClassic::QBoyClassic(QWidget *parent) :
 
 
 
-	std::ifstream fin("cpu_instrs.gb");
+	std::ifstream fin("opus_5.gb");
 	if (!fin.bad()) {
 		qboy->loadgame(fin);
 		fin.close();
@@ -26,7 +26,7 @@ QBoyClassic::~QBoyClassic()
 
 void QBoyClassic::on_pushButton_clicked() {
 
-	int c = 100;
+	int c = 10000;
 	while (c--) {
 		qboy->cycle();
 	}

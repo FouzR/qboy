@@ -28,7 +28,7 @@ void z80mmu::reset() {
 	bios = std::vector<quint8>(bios_arr, bios_arr + sizeof(bios_arr) / sizeof(bios_arr[0]));
 	inbios = true;
 
-	rom.resize(16384, 0);
+	rom.resize(16384*2, 0);
 	eram.resize(8192, 0);
 	wram.resize(8192, 0);
 	zram.resize(128, 0);

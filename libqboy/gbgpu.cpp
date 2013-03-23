@@ -9,7 +9,7 @@ void gbgpu::reset() {
 	modeclock = 0;
 	line = 0;
 	vram.resize(0x2000, 0);
-	vreg.resize(16);
+	vreg.resize(256);
 
 	for (int i = 0; i < 4; ++i) {
 		pallete_bg[i] = pallete_obj0[i] = pallete_obj1[i] = 255;
@@ -235,18 +235,18 @@ void gbgpu::renderscan() {
 			posy = bgy;
 			mapbase = bg_mapbase;
 		} else {
-			screen_buffer[x][line][0] = screen_buffer[x][line][1] = screen_buffer[x][line][2] = 0;
+			screen_buffer[line][x][0] = screen_buffer[line][x][1] = screen_buffer[line][x][2] = 255;
 			continue;
 		}
 
 		if (tilemap1) {
 			quint8 tilenr;
-			tilenr = vram[mapbase + ((posy >> 3) << 5) + (posx >> 3)];
+			tilenr = vram[mapbase + ((posy / 8) * 32) + (posx / 8)];
 			tileaddress = tilenr * 16;
 		} else {
 			qint8 tilenr; // signed!
-			tileaddress = 0x800;
-			tilenr = vram[mapbase + ((posy >> 3) << 5) + (posx >> 3)];
+			tileaddress = 0x0800;
+			tilenr = vram[mapbase + ((posy / 8) * 32) + (posx / 8)];
 			tileaddress += ((tilenr + 128)*16);
 		}
 
