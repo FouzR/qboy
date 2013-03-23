@@ -9,14 +9,14 @@ void gbgpu::reset() {
 	modeclock = 0;
 	line = 0;
 	vram.resize(0x2000, 0);
-	vreg.resize(256);
+	vreg.resize(256, 0);
 
 	for (int i = 0; i < 4; ++i) {
 		pallete_bg[i] = pallete_obj0[i] = pallete_obj1[i] = 255;
 	}
 
-	lcd_on = true;
-	bg_on = true, win_on = false;
+	lcd_on = false;
+	bg_on = false, win_on = false;
 	sprite_on = sprite_large = false;
 	xscroll = yscroll = 0;
 	winxpos = winypos = 0;
@@ -24,6 +24,7 @@ void gbgpu::reset() {
 	tilemap1 = false;
 	bg_mapbase = 0x1800;
 	win_mapbase = 0x1800;
+	updated = false;
 
 	for (int y = 0; y < _GBGPU_H; ++y) {
 		for (int x = 0; x < _GBGPU_W; ++x) {
@@ -239,14 +240,17 @@ void gbgpu::renderscan() {
 			continue;
 		}
 
+		int tiley = ((posy >> 3)) << 5;
+		int tilex = ((posx >> 3));
+
 		if (tilemap1) {
 			quint8 tilenr;
-			tilenr = vram[mapbase + ((posy / 8) * 32) + (posx / 8)];
+			tilenr = vram[mapbase + tiley + tilex];
 			tileaddress = tilenr * 16;
 		} else {
 			qint8 tilenr; // signed!
 			tileaddress = 0x0800;
-			tilenr = vram[mapbase + ((posy / 8) * 32) + (posx / 8)];
+			tilenr = vram[mapbase + tiley + tilex];
 			tileaddress += ((tilenr + 128)*16);
 		}
 
@@ -254,8 +258,8 @@ void gbgpu::renderscan() {
 		quint8 byte2 = vram[tileaddress + ((posy % 8) * 2) + 1];
 
 		quint8 xbit = 7 - (posx % 8);
-		quint8 colnr = (byte1 & (1 << xbit)) ? 1 : 0;
-		colnr |= (byte2 & (1 << xbit)) ? 2 : 0;
+		quint8 colnr = (byte1 & (1u << xbit)) ? 1 : 0;
+		colnr |= (byte2 & (1u << xbit)) ? 2 : 0;
 		colour = pallete_bg[colnr];
 
 		screen_buffer[line][x][0] = screen_buffer[line][x][1] = screen_buffer[line][x][2] = colour;
@@ -267,5 +271,5 @@ void gbgpu::renderscan() {
 }
 
 void gbgpu::updatebuffer() {
-
+	updated = true;
 }

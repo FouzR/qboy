@@ -17,8 +17,10 @@ public:
 	quint8 getvram(quint16 address);
 	void setvreg(quint16 address, quint8 val);
 	quint8 getvreg(quint16 address);
+	bool updated;
 private:
 	quint8 screen_buffer[_GBGPU_H][_GBGPU_W][4];
+
 	int mode;
 	int modeclock;
 	int line;

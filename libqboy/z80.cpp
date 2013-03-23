@@ -139,7 +139,7 @@ bool z80::jumpcond(int arg) {
 }
 
 void z80::call(quint8 opcode) {
-	std::cerr << "PC: " << (int)pc.getfull() << ", opcode: " << std::hex << (int)opcode << std::endl;
+	//std::cerr << "PC: " << (int)pc.getfull() << ", opcode: " << std::hex << (int)opcode << std::endl;
 	int hi2 = opcode >> 6;
 	int mid3 = (opcode >> 3) & 7;
 	int low3 = opcode & 7;
@@ -151,7 +151,7 @@ void z80::call(quint8 opcode) {
 		case 0:
 			if (mid3 == 0) op_nop();
 			else if (mid3 == 1) op_ld_mm_sp();
-			else if (mid3 == 2) ; // STOP goes here
+			else if (mid3 == 2) assert(false && "should have STOPped");
 			else if (mid3 >= 3) op_jump_rel(mid3);
 			break;
 		case 1:
@@ -193,7 +193,7 @@ void z80::call(quint8 opcode) {
 		}
 		break;
 	case 1:
-		if (mid3 == 6 && low3 == 6) op_halt();
+		if (mid3 == 6 && low3 == 6) assert(false && "should have HALTed");
 		else op_ld_r_r(mid3, low3);
 		break;
 	case 2:
@@ -220,7 +220,7 @@ void z80::call(quint8 opcode) {
 		switch (low3) {
 		case 0:
 			if (mid3 < 4) op_ret_cond(mid3);
-			else if ((mid3 & 1) == 0) op_ld_a_n(mid3);
+			else if ((mid3 & 1) == 0) op_ld_a_n(mid2);
 			else if (mid3 == 5) op_ld_sp_sn();
 			else op_ld_hl_sp_sn();
 			break;
@@ -306,7 +306,7 @@ void z80::call_extended() {
 		case 5:
 			op_sda(arg, RIGHT); break;
 		case 6:
-			// TODO: swap
+			assert(false && "Swap not implemented");
 			break;
 		case 7:
 			op_srl(arg); break;
@@ -744,7 +744,7 @@ void z80::op_jump_cond(int arg) {
 }
 
 void z80::op_jump_rel(int arg) {
-	qint8 addr = getbytearg() + 2;
+	qint8 addr = getbytearg();
 	bool jump = false;
 
 	if (arg == 3) jump = true;
@@ -817,7 +817,7 @@ void z80::op_ld_mm_sp() {
 
 void z80::op_ld_a_n(int arg) {
 	quint16 addr = 0xFF00 | getbytearg();
-	if ((arg & 2) == 0) {
+	if ((arg & 1) == 0) {
 		mmu->writebyte(addr, af.gethi());
 	} else {
 		af.sethi(mmu->readbyte(addr));

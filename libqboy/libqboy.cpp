@@ -23,3 +23,11 @@ void libqboy::cycle() {
 	cpu.cycle();
 	gpu.step(cpu.get_t());
 }
+
+bool libqboy::doupdate() {
+	if (gpu.updated) {
+		gpu.updated = false;
+		return true;
+	}
+	return false;
+}

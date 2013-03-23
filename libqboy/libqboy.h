@@ -16,6 +16,7 @@ public:
 	quint8 *getLCD();
 	void loadgame(std::istream &in);
 	void cycle();
+	bool doupdate();
 private:
 	z80 cpu;
 	z80mmu mmu;

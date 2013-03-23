@@ -2,6 +2,7 @@
 #include "ui_qboyclassic.h"
 
 #include <fstream>
+#include <cassert>
 
 QBoyClassic::QBoyClassic(QWidget *parent) :
     QMainWindow(parent),
@@ -12,11 +13,13 @@ QBoyClassic::QBoyClassic(QWidget *parent) :
 
 
 
-	std::ifstream fin("opus_5.gb");
-	if (!fin.bad()) {
-		qboy->loadgame(fin);
-		fin.close();
+	std::ifstream fin("cpu_instrs.gb");
+	if (!fin.is_open()) {
+		assert(false && "Could not open file");
 	}
+	qboy->loadgame(fin);
+	fin.close();
+
 }
 
 QBoyClassic::~QBoyClassic()
@@ -26,10 +29,18 @@ QBoyClassic::~QBoyClassic()
 
 void QBoyClassic::on_pushButton_clicked() {
 
-	int c = 10000;
+	int c = 10000000;
+	ui->pushButton->setText("Busy");
+
+	int x = 0;
 	while (c--) {
 		qboy->cycle();
+		if (qboy->doupdate()) {
+			QImage qboylcd(qboy->getLCD(), 160, 144, QImage::Format_RGB32);
+			ui->label->setPixmap(QPixmap::fromImage(qboylcd));
+			QApplication::processEvents();
+		}
 	}
-	QImage qboylcd(qboy->getLCD(), 160, 144, QImage::Format_RGB32);
-	ui->label->setPixmap(QPixmap::fromImage(qboylcd));
+
+	ui->pushButton->setText("Done");
 }

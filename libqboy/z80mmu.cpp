@@ -37,7 +37,7 @@ void z80mmu::reset() {
 void z80mmu::load(std::istream &in) {
 	char byte;
 	int pos = 0;
-	while (in.read(&byte, 1) && pos <= 16384) {
+	while (in.read(&byte, 1) && pos <= 16384*2) {
 		rom[++pos] = byte;
 	}
 }
@@ -66,7 +66,7 @@ quint8 z80mmu::readbyte(quint16 address) {
 
 	// VRAM
 	case 0x8000: case 0x9000:
-		return gpu->getvram(address & 0x1FFF);
+		return gpu->getvram(address - 0x8000);
 
 	// External RAM
 	case 0xA000: case 0xB000:
@@ -137,7 +137,7 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 
 	// VRAM
 	case 0x8000: case 0x9000:
-		gpu->setvram(address & 0x1FFF, value);
+		gpu->setvram(address - 0x8000, value);
 		break;
 
 	// External RAM
