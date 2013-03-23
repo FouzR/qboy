@@ -39,7 +39,7 @@ public:
 	QImage *image;
 
 
-	void ImagePlacer::paintEvent (QPaintEvent *){
+	void paintEvent (QPaintEvent *){
 		if (image != 0)
 		{
 		  QPainter painter(this);

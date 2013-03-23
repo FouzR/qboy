@@ -9,7 +9,7 @@ qboythread::qboythread(QString filename, QObject *parent) : QThread(parent) {
 	dorun = true;
 	qboy = new libqboy();
 
-	std::ifstream fin(filename.toStdString(), std::ios_base::in | std::ios_base::binary);
+	std::ifstream fin(filename.toStdString().c_str(), std::ios_base::in | std::ios_base::binary);
 	if (!fin.is_open()) {
 		assert(false && "Could not open file");
 	}
