@@ -39,8 +39,8 @@ void qboythread::run() {
 			if (gbtime - old_gbtime > 10000) {
 				int s = (gbtime - old_gbtime) / 4000 - timer.elapsed();
 				s = qMax(0, s);
-				msleep(s);
 				timer.restart();
+				msleep(s);
 				old_gbtime = gbtime;
 			}
 		}
