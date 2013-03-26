@@ -10,6 +10,8 @@ void gbgpu::reset() {
 	line = 0;
 	vram.resize(0x2000, 0);
 	vreg.resize(256, 0);
+	oam.resize(160, 0);
+	sprites.resize(_GBGPU_SPRITENUM);
 
 	for (int i = 0; i < 4; ++i) {
 		pallete_bg[i] = pallete_obj0[i] = pallete_obj1[i] = 255;
@@ -21,7 +23,7 @@ void gbgpu::reset() {
 	xscroll = yscroll = 0;
 	winxpos = winypos = 0;
 	linecmp = 0;
-	tilemap1 = false;
+	tileset1 = false;
 	bg_mapbase = 0x1800;
 	win_mapbase = 0x1800;
 	updated = false;
@@ -100,7 +102,7 @@ void gbgpu::setvreg(quint16 address, quint8 val) {
 		lcd_on = (val & 0x80);
 		win_mapbase = (val & 0x40) ? 0x1C00 : 0x1800;
 		win_on = (val & 0x20);
-		tilemap1 = (val & 0x10);
+		tileset1 = (val & 0x10);
 		bg_mapbase = (val & 0x08) ? 0x1C00 : 0x1800;
 		sprite_large = (val & 0x04);
 		sprite_on = (val & 0x02);
@@ -187,7 +189,7 @@ quint8 gbgpu::getvreg(quint16 address) {
 		return (lcd_on ? 0x80 : 0) |
 				(win_mapbase == 0x1C00 ? 0x40 : 0) |
 				(win_on ? 0x20 : 0) |
-				(tilemap1 ? 0x10 : 0) |
+				(tileset1 ? 0x10 : 0) |
 				(bg_mapbase == 0x1C00 ? 0x08 : 0) |
 				(sprite_large ? 0x04 : 0) |
 				(sprite_on ? 0x02 : 0) |
@@ -209,6 +211,15 @@ quint8 gbgpu::getvreg(quint16 address) {
 	}
 
 	return vreg[address];
+}
+
+void gbgpu::setoam(quint16 address, quint8 val) {
+	oam[address & 0xFF] = val;
+	buildsprite((address & 0xFF) / 4);
+}
+
+quint8 gbgpu::getoam(quint16 address) {
+	return address & 0xFF;
 }
 
 void gbgpu::renderscan() {
@@ -243,7 +254,7 @@ void gbgpu::renderscan() {
 		int tiley = ((posy >> 3)) << 5;
 		int tilex = ((posx >> 3));
 
-		if (tilemap1) {
+		if (tileset1) {
 			quint8 tilenr;
 			tilenr = vram[mapbase + tiley + tilex];
 			tileaddress = tilenr * 16;
@@ -266,10 +277,50 @@ void gbgpu::renderscan() {
 	}
 
 	if (sprite_on) {
-		// TODO
+		for (int i = 0; i < _GBGPU_SPRITENUM; ++i) {
+			gbgpu_sprite sprite = sprites[i];
+
+			if (line >= sprite.y && line < sprite.y + 8) {
+				int tiley = sprite.yflip
+						? 7 - (line - sprite.y)
+						: line - sprite.y;
+
+				quint16 tileaddress = sprite.tile * 16 + tiley * 2;
+				quint8 byte1 = vram[tileaddress];
+				quint8 byte2 = vram[tileaddress + 1];
+
+				for (int x = 0; x < 8; ++x) {
+					int tilex = sprite.xflip ? 7 - x : x;
+					if (sprite.x + x < 0 || sprite.x + x >= 160) continue;
+
+					int colnr = (byte1 & (1 << tilex)) ? 1 : 0;
+					colnr |= (byte2 & (1 << tilex)) ? 2 : 0;
+					int colour = (sprite.pallete1) ? pallete_obj1[colnr] : pallete_obj0[colnr];
+
+					if (colour == 255) continue;
+					if (sprite.belowbg && screen_buffer[line][sprite.x][0] != 255) continue;
+
+					screen_buffer[line][sprite.x + x][0] = screen_buffer[line][sprite.x + x][1] = screen_buffer[line][sprite.x + x][2] = colour;
+				}
+			}
+		}
 	}
 }
 
 void gbgpu::updatebuffer() {
 	updated = true;
+}
+
+void gbgpu::buildsprite(int num) {
+	quint16 oambase = num * 4;
+
+	sprites[num].y = oam[oambase + 0] - 16;
+	sprites[num].x = oam[oambase + 1] - 8;
+	sprites[num].tile = oam[oambase + 2];
+
+	quint8 flags = oam[oambase + 3];
+	sprites[num].pallete1 = flags & 0x10;
+	sprites[num].xflip = flags & 0x20;
+	sprites[num].yflip = flags & 0x40;
+	sprites[num].belowbg = flags & 0x80;
 }

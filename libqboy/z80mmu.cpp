@@ -93,11 +93,9 @@ quint8 z80mmu::readbyte(quint16 address) {
 		case 0xC00: case 0xD00:
 			return wram[address & 0x1FFF];
 
-		/*
 		// OAM
 		case 0xE00:
-			return ((address & 0xFF) < 0xA0) ? GPU._oam[addr&0xFF] : 0;
-		*/
+			return ((address & 0xFF) < 0xA0) ? gpu->getoam(address) : 0;
 
 		// Zeropage RAM, I/O
 		case 0xF00:
@@ -169,13 +167,12 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 			wram[address & 0x1FFF] = value;
 			break;
 
-			// OAM
-			/*case 0xE00:
-			if((addr&0xFF)<0xA0) GPU._oam[addr&0xFF] = val;
-			GPU.updateoam(addr,val);
-			break;*/
+		// OAM
+		case 0xE00:
+			if((address & 0xFF) < 0xA0) gpu->setoam(address, value);
+			break;
 
-			// Zeropage RAM, I/O
+		// Zeropage RAM, I/O
 		case 0xF00:
 			if(address > 0xFF7F) {
 				zram[address & 0x7F] = value;
