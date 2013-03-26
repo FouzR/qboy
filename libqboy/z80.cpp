@@ -181,13 +181,13 @@ void z80::call(quint8 opcode) {
 		case 7:
 			switch (mid3) {
 			case 0:
-				op_rdca(LEFT); break;
+				op_rdca(Direction_LEFT); break;
 			case 1:
-				op_rdca(RIGHT); break;
+				op_rdca(Direction_RIGHT); break;
 			case 2:
-				op_rda(LEFT); break;
+				op_rda(Direction_LEFT); break;
 			case 3:
-				op_rda(RIGHT); break;
+				op_rda(Direction_RIGHT); break;
 			case 5:
 				op_cpl(); break;
 			case 6:
@@ -300,17 +300,17 @@ void z80::call_extended() {
 	case 0:
 		switch (mid3) {
 		case 0:
-			op_rdc_r(arg, LEFT); break;
+			op_rdc_r(arg, Direction_LEFT); break;
 		case 1:
-			op_rdc_r(arg, RIGHT); break;
+			op_rdc_r(arg, Direction_RIGHT); break;
 		case 2:
-			op_rd_r(arg, LEFT); break;
+			op_rd_r(arg, Direction_LEFT); break;
 		case 3:
-			op_rd_r(arg, RIGHT); break;
+			op_rd_r(arg, Direction_RIGHT); break;
 		case 4:
-			op_sda(arg, LEFT); break;
+			op_sda(arg, Direction_LEFT); break;
 		case 5:
-			op_sda(arg, RIGHT); break;
+			op_sda(arg, Direction_RIGHT); break;
 		case 6:
 			op_swap(arg); break;
 		case 7:
@@ -570,7 +570,7 @@ void z80::op_dec16_rr(int arg) {
 
 void z80::op_rdca(Direction dir) {
 	quint8 ans = af.gethi();
-	if (dir == LEFT) {
+	if (dir == Direction_LEFT) {
 		ans = alu.rlc(ans, false);
 	} else {
 		ans = alu.rrc(ans, false);
@@ -582,7 +582,7 @@ void z80::op_rdca(Direction dir) {
 
 void z80::op_rda(Direction dir) {
 	quint8 ans = af.gethi();
-	if (dir == LEFT) {
+	if (dir == Direction_LEFT) {
 		ans = alu.rl(ans, false);
 	} else {
 		ans = alu.rr(ans, false);
@@ -597,7 +597,7 @@ void z80::op_rdc_r(int arg, Direction dir) {
 	if (arg == 6) {
 		quint16 addr = hl.getfull();
 		ans = mmu->readbyte(addr);
-		if (dir == LEFT) {
+		if (dir == Direction_LEFT) {
 			ans = alu.rlc(ans);
 		} else {
 			ans = alu.rrc(ans);
@@ -607,7 +607,7 @@ void z80::op_rdc_r(int arg, Direction dir) {
 		addticks(4, 15);
 	} else {
 		ans = getbyteregisterval(arg);
-		if (dir == LEFT) {
+		if (dir == Direction_LEFT) {
 			ans = alu.rlc(ans);
 		} else {
 			ans = alu.rrc(ans);
@@ -623,7 +623,7 @@ void z80::op_rd_r(int arg, Direction dir) {
 	if (arg == 6) {
 		quint16 addr = hl.getfull();
 		ans = mmu->readbyte(addr);
-		if (dir == LEFT) {
+		if (dir == Direction_LEFT) {
 			ans = alu.rl(ans);
 		} else {
 			ans = alu.rr(ans);
@@ -633,7 +633,7 @@ void z80::op_rd_r(int arg, Direction dir) {
 		addticks(4, 15);
 	} else {
 		ans = getbyteregisterval(arg);
-		if (dir == LEFT) {
+		if (dir == Direction_LEFT) {
 			ans = alu.rl(ans);
 		} else {
 			ans = alu.rr(ans);
@@ -649,7 +649,7 @@ void z80::op_sda(int arg, Direction dir) {
 	if (arg == 6) {
 		quint16 addr = hl.getfull();
 		ans = mmu->readbyte(addr);
-		if (dir == LEFT) {
+		if (dir == Direction_LEFT) {
 			ans = alu.sla(ans);
 		} else {
 			ans = alu.sra(ans);
@@ -659,7 +659,7 @@ void z80::op_sda(int arg, Direction dir) {
 		addticks(4, 15);
 	} else {
 		ans = getbyteregisterval(arg);
-		if (dir == LEFT) {
+		if (dir == Direction_LEFT) {
 			ans = alu.sla(ans);
 		} else {
 			ans = alu.sra(ans);

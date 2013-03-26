@@ -34,19 +34,25 @@ void qboythread::run() {
 	int old_gbtime = 0, gbtime = 0;
 	while (dorun) {
 		qboy->cycle();
-		if (qboy->doupdate()) {
-			gbtime = qboy->get_elapsed_time();
-			if (gbtime - old_gbtime > 10000) {
-				int s = (gbtime - old_gbtime) / 4000 - timer.elapsed();
-				s = qMax(0, s);
-				timer.restart();
-				msleep(s);
-				old_gbtime = gbtime;
-			}
+		gbtime = qboy->get_elapsed_time();
+		if (gbtime - old_gbtime > 40000) {
+			int s = (gbtime - old_gbtime) / 4000 - timer.elapsed();
+			s = qMax(0, s);
+			timer.restart();
+			msleep(s);
+			old_gbtime = gbtime;
 		}
 	}
 }
 
 void qboythread::stop() {
 	dorun = false;
+}
+
+void qboythread::keydown(GBKeypadKey key) {
+	qboy->keydown(key);
+}
+
+void qboythread::keyup(GBKeypadKey key) {
+	qboy->keyup(key);
 }

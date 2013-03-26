@@ -1,14 +1,13 @@
 #include "libqboy.h"
 
 libqboy::libqboy() : cpu(&mmu) {
+	mmu.attach(&gpu, &keypad);
 	reset();
 }
 
 void libqboy::reset() {
 	cpu.reset();
-	gpu.reset();
 	mmu.reset();
-	mmu.setgpu(&gpu);
 }
 
 void libqboy::loadgame(std::istream &in) {
@@ -24,14 +23,15 @@ void libqboy::cycle() {
 	gpu.step(cpu.get_t());
 }
 
-bool libqboy::doupdate() {
-	if (gpu.updated) {
-		gpu.updated = false;
-		return true;
-	}
-	return false;
-}
-
 int libqboy::get_elapsed_time() {
 	return cpu.get_t();
+}
+
+void libqboy::keyup(GBKeypadKey key) {
+	keypad.keyup(key);
+}
+
+
+void libqboy::keydown(GBKeypadKey key) {
+	keypad.keydown(key);
 }

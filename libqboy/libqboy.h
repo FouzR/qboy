@@ -16,12 +16,14 @@ public:
 	quint8 *getLCD();
 	void loadgame(std::istream &in);
 	void cycle();
-	bool doupdate();
 	int get_elapsed_time();
+	void keyup(GBKeypadKey key);
+	void keydown(GBKeypadKey key);
 private:
 	z80 cpu;
 	z80mmu mmu;
 	gbgpu gpu;
+	gbkeypad keypad;
 };
 
 #endif // LIBQBOY_H

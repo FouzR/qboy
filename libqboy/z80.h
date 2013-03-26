@@ -7,8 +7,8 @@
 #include "z80register.h"
 
 enum Direction {
-	LEFT,
-	RIGHT
+	Direction_LEFT,
+	Direction_RIGHT
 };
 
 class z80 {

@@ -4,6 +4,7 @@
 #include "libqboy_global.h"
 
 #include "gbgpu.h"
+#include "gbkeypad.h"
 
 #include <istream>
 #include <vector>
@@ -11,7 +12,7 @@
 class z80mmu {
 public:
 	z80mmu();
-	void setgpu(gbgpu *gpu);
+	void attach(gbgpu *gpu, gbkeypad *keypad);
 	void reset();
 	void load(std::istream &in);
 	void outofbios();
@@ -23,6 +24,7 @@ public:
 private:
 	bool inbios;
 	gbgpu *gpu;
+	gbkeypad *keypad;
 	std::vector<quint8> bios, rom, eram, wram, zram;
 };
 

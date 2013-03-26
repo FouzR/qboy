@@ -13,6 +13,9 @@ public:
 	quint8 *getLCD();
 	void run();
 	void stop();
+	void keydown(GBKeypadKey key);
+	void keyup(GBKeypadKey key);
+
 signals:
 	
 public slots:

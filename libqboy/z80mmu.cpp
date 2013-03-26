@@ -1,11 +1,14 @@
 #include "z80mmu.h"
 
 z80mmu::z80mmu() {
+	gpu = NULL;
+	keypad = NULL;
 	reset();
 }
 
-void z80mmu::setgpu(gbgpu *gpu) {
+void z80mmu::attach(gbgpu *gpu, gbkeypad *keypad) {
 	this->gpu = gpu;
+	this->keypad = keypad;
 }
 
 void z80mmu::reset() {
@@ -32,6 +35,9 @@ void z80mmu::reset() {
 	eram.resize(8192, 0);
 	wram.resize(8192, 0);
 	zram.resize(128, 0);
+
+	if (gpu != NULL) gpu->reset();
+	if (keypad != NULL) keypad->reset();
 }
 
 void z80mmu::load(std::istream &in) {
@@ -100,7 +106,7 @@ quint8 z80mmu::readbyte(quint16 address) {
 			} else {
 				switch(address & 0xF0) {
 				case 0x00:
-					return 0; // TODO
+					return keypad->readbyte(address);
 				case 0x10: case 0x20: case 0x30:
 					return 0;
 				case 0x40: case 0x50: case 0x60: case 0x70:
@@ -176,6 +182,7 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 			} else {
 				switch(address & 0xF0) {
 				case 0x00:
+					keypad->writebyte(address, value);
 					break;
 				case 0x10: case 0x20: case 0x30:
 					break;

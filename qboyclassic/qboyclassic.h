@@ -4,6 +4,7 @@
 #include "qboythread.h"
 
 #include <QMainWindow>
+#include <QKeyEvent>
 
 #include <QLabel>
 #include <QPainter>
@@ -21,12 +22,15 @@ public:
 	~QBoyClassic();
 
 private slots:
-	void on_pushButton_clicked();
 
 private:
 	Ui::QBoyClassic *ui;
 	qboythread *qboyt;
 	QTimer *timer;
+
+	void keyPressEvent(QKeyEvent *event);
+	void keyReleaseEvent(QKeyEvent *event);
+	GBKeypadKey qtkeytogb(int qtkey);
 };
 
 

@@ -14,7 +14,7 @@ QBoyClassic::QBoyClassic(QWidget *parent) :
 	timer->start();
 
 	// Create gameboy
-	qboyt = new qboythread("opus5.gb");
+	qboyt = new qboythread("ttt.gb");
 	qboyt->start();
 
 	ui->label->image = new QImage(qboyt->getLCD(), 160, 144, QImage::Format_RGB32);
@@ -26,7 +26,43 @@ QBoyClassic::~QBoyClassic() {
 	delete ui;
 }
 
+void QBoyClassic::keyPressEvent(QKeyEvent* event) {
+	GBKeypadKey key = qtkeytogb(event->key());
 
-void QBoyClassic::on_pushButton_clicked() {
-	qboyt->stop();
+	if (key != GBKeypadKey_NONE) {
+		qboyt->keydown(key);
+		event->accept();
+	}
+}
+
+void QBoyClassic::keyReleaseEvent(QKeyEvent *event) {
+	GBKeypadKey key = qtkeytogb(event->key());
+
+	if (key != GBKeypadKey_NONE) {
+		qboyt->keyup(key);
+		event->accept();
+	}
+}
+
+GBKeypadKey QBoyClassic::qtkeytogb(int qtkey) {
+	GBKeypadKey key = GBKeypadKey_NONE;
+	switch (qtkey) {
+	case Qt::Key_Return:
+		key = GBKeypadKey_START; break;
+	case Qt::Key_Space:
+		key = GBKeypadKey_SELECT; break;
+	case Qt::Key_Left:
+		key = GBKeypadKey_LEFT; break;
+	case Qt::Key_Right:
+		key = GBKeypadKey_RIGHT; break;
+	case Qt::Key_Down:
+		key = GBKeypadKey_DOWN; break;
+	case Qt::Key_Up:
+		key = GBKeypadKey_UP; break;
+	case Qt::Key_X:
+		key = GBKeypadKey_B; break;
+	case Qt::Key_Z:
+		key = GBKeypadKey_A; break;
+	}
+	return key;
 }
