@@ -24,7 +24,7 @@ class gbgpu {
 public:
 	gbgpu();
 	void reset();
-	void step(int z80t);
+	void step(int z80m);
 	quint8 *getLCD();
 	void setvram(quint16 address, quint8 val);
 	quint8 getvram(quint16 address);
@@ -32,13 +32,15 @@ public:
 	quint8 getvreg(quint16 address);
 	void setoam(quint16 address, quint8 val);
 	quint8 getoam(quint16 address);
-	bool updated;
+	bool readandclearinterrupt();
 private:
 	quint8 screen_buffer[_GBGPU_H][_GBGPU_W][4];
 
 	int mode;
 	int modeclock;
 	int line;
+
+	bool updated;
 
 	quint8 pallete_bg[4], pallete_obj0[4], pallete_obj1[4];
 

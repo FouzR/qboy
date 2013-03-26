@@ -20,11 +20,11 @@ quint8 *libqboy::getLCD() {
 
 void libqboy::cycle() {
 	cpu.cycle();
-	gpu.step(cpu.get_t());
+	gpu.step(cpu.get_m());
 }
 
 int libqboy::get_elapsed_time() {
-	return cpu.get_t();
+	return cpu.get_m();
 }
 
 void libqboy::keyup(GBKeypadKey key) {

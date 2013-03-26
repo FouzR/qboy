@@ -14,7 +14,7 @@ QBoyClassic::QBoyClassic(QWidget *parent) :
 	timer->start();
 
 	// Create gameboy
-	qboyt = new qboythread("ttt.gb");
+	qboyt = new qboythread("tetris.gb");
 	qboyt->start();
 
 	ui->label->image = new QImage(qboyt->getLCD(), 160, 144, QImage::Format_RGB32);

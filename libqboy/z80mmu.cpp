@@ -31,10 +31,13 @@ void z80mmu::reset() {
 	bios = std::vector<quint8>(bios_arr, bios_arr + sizeof(bios_arr) / sizeof(bios_arr[0]));
 	inbios = true;
 
-	rom.resize(0x10000, 0);
+	rom.clear();
 	eram.resize(8192, 0);
 	wram.resize(8192, 0);
 	zram.resize(128, 0);
+
+	interrupt_enabled = 0;
+	interrupt_flag = 0;
 
 	if (gpu != NULL) gpu->reset();
 	if (keypad != NULL) keypad->reset();
@@ -42,10 +45,9 @@ void z80mmu::reset() {
 
 void z80mmu::load(std::istream &in) {
 	char byte;
-	int pos = 0;
-	while (pos <= 0xFFFF) {
-		in.read(&byte, 1);
-		rom[pos++] = byte;
+	rom.clear();
+	while (in.read(&byte, 1)) {
+		rom.push_back(byte);
 	}
 }
 
@@ -57,11 +59,8 @@ quint8 z80mmu::readbyte(quint16 address) {
 	switch(address & 0xF000) {
 	// ROM bank 0
 	case 0x0000:
-		if(inbios) {
-			if(address < 0x0100) return bios[address];
-		} else {
-			return rom[address];
-		}
+		if(inbios && address < 0x0100)
+			return bios[address];
 	case 0x1000:
 	case 0x2000:
 	case 0x3000:
@@ -73,7 +72,7 @@ quint8 z80mmu::readbyte(quint16 address) {
 
 	// VRAM
 	case 0x8000: case 0x9000:
-		return gpu->getvram(address - 0x8000);
+		return gpu->getvram(address & 0x1FFF);
 
 	// External RAM
 	case 0xA000: case 0xB000:
@@ -99,11 +98,16 @@ quint8 z80mmu::readbyte(quint16 address) {
 
 		// Zeropage RAM, I/O
 		case 0xF00:
-			if(address > 0xFF7F) {
+			if (address == 0xFFFF) return interrupt_enabled;
+			else if(address > 0xFF7F) {
 				return zram[address & 0x7F];
 			} else {
 				switch(address & 0xF0) {
 				case 0x00:
+					if (address == 0xFF0F) {
+						getinterrupts();
+						return interrupt_flag;
+					}
 					return keypad->readbyte(address);
 				case 0x10: case 0x20: case 0x30:
 					return 0;
@@ -142,7 +146,7 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 
 	// VRAM
 	case 0x8000: case 0x9000:
-		gpu->setvram(address - 0x8000, value);
+		gpu->setvram(address & 0x1FFF, value);
 		break;
 
 	// External RAM
@@ -174,11 +178,13 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 
 		// Zeropage RAM, I/O
 		case 0xF00:
-			if(address > 0xFF7F) {
+			if (address == 0xFFFF) interrupt_enabled = value;
+			else if (address > 0xFF7F) {
 				zram[address & 0x7F] = value;
 			} else {
 				switch(address & 0xF0) {
 				case 0x00:
+					if (address == 0xFF0F) interrupt_flag = value;
 					keypad->writebyte(address, value);
 					break;
 				case 0x10: case 0x20: case 0x30:
@@ -196,4 +202,21 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 void z80mmu::writeword(quint16 address, quint16 value) {
 	writebyte(address + 1, value >> 8);
 	writebyte(address, value & 0xFF);
+}
+
+bool z80mmu::readandclearinterrupt(quint8 mask) {
+	getinterrupts();
+
+	quint8 iflag = mask & interrupt_enabled & interrupt_flag;
+	if (iflag) {
+		interrupt_flag &= ~mask;
+		return true;
+	}
+	return false;
+}
+
+void z80mmu::getinterrupts() {
+	if (gpu->readandclearinterrupt()) {
+		interrupt_flag |= 0x1;
+	}
 }

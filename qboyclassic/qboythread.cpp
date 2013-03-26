@@ -31,16 +31,16 @@ void qboythread::run() {
 	QElapsedTimer timer;
 	timer.start();
 
-	int old_gbtime = 0, gbtime = 0;
+	int gbtime = 0;
 	while (dorun) {
 		qboy->cycle();
-		gbtime = qboy->get_elapsed_time();
-		if (gbtime - old_gbtime > 40000) {
-			int s = (gbtime - old_gbtime) / 4000 - timer.elapsed();
+		gbtime += qboy->get_elapsed_time();
+		if (gbtime > 10000) {
+			int s = gbtime / 1000 - timer.elapsed();
 			s = qMax(0, s);
 			timer.restart();
 			msleep(s);
-			old_gbtime = gbtime;
+			gbtime = 0;
 		}
 	}
 }

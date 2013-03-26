@@ -1,11 +1,14 @@
 #include "gbgpu.h"
 
+#include <cassert>
+#include <iostream>
+
 gbgpu::gbgpu() {
 	reset();
 }
 
 void gbgpu::reset() {
-	mode = 0;
+	mode = 2;
 	modeclock = 0;
 	line = 0;
 	vram.resize(0x2000, 0);
@@ -40,37 +43,37 @@ void gbgpu::reset() {
 	}
 }
 
-void gbgpu::step(int z80t) {
-	modeclock += z80t;
+void gbgpu::step(int z80m) {
+	modeclock += z80m;
 
 	switch (mode) {
 	case 2:
-		if (modeclock >= 80) {
+		if (modeclock >= 20) {
 			modeclock = 0;
 			mode = 3;
 		}
 		break;
 	case 3:
-		if (modeclock >= 172) {
+		if (modeclock >= 43) {
 			modeclock = 0;
 			mode = 0;
 			renderscan();
 		}
 		break;
 	case 0:
-		if (modeclock >= 204) {
+		if (modeclock >= 51) {
 			modeclock = 0;
 			++line;
-			if (line == 143) {
+			if (line == 144) {
 				mode = 1;
-				updatebuffer();
+				updated = true;
 			} else {
 				mode = 2;
 			}
 		}
 		break;
 	case 1:
-		if (modeclock >= 456) {
+		if (modeclock >= 114) {
 			modeclock = 0;
 			++line;
 			if (line > 153) {
@@ -307,10 +310,6 @@ void gbgpu::renderscan() {
 	}
 }
 
-void gbgpu::updatebuffer() {
-	updated = true;
-}
-
 void gbgpu::buildsprite(int num) {
 	quint16 oambase = num * 4;
 
@@ -323,4 +322,12 @@ void gbgpu::buildsprite(int num) {
 	sprites[num].xflip = flags & 0x20;
 	sprites[num].yflip = flags & 0x40;
 	sprites[num].belowbg = flags & 0x80;
+}
+
+bool gbgpu::readandclearinterrupt() {
+	if (updated) {
+		updated = false;
+		return true;
+	}
+	return false;
 }

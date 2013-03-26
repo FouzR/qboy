@@ -16,10 +16,11 @@ public:
 	z80(z80mmu *mmu);
 	void reset();
 	void cycle();
-	int get_t();
+	int get_m();
 private:
 	int clock_m, clock_t;
-	bool iff; // interupt flipflop
+	int last_m;
+	bool interupt_enable;
 
 	z80mmu *mmu;
 	z80alu alu;
@@ -93,6 +94,7 @@ private:
 	void op_ret_cond(int arg);
 	void op_reti();
 	void op_rst_p(int arg);
+	void op_rst40();
 	void op_ld_mm_sp();
 	void op_ld_a_n(int arg);
 	void op_ld_sp_sn();

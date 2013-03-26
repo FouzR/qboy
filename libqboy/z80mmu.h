@@ -20,12 +20,16 @@ public:
 	quint16 readword(quint16 address);
 	void writebyte(quint16 address, quint8 value);
 	void writeword(quint16 address, quint16 value);
+	bool readandclearinterrupt(quint8 mask);
 
 private:
 	bool inbios;
 	gbgpu *gpu;
 	gbkeypad *keypad;
 	std::vector<quint8> bios, rom, eram, wram, zram;
+	quint8 interrupt_enabled, interrupt_flag;
+
+	void getinterrupts();
 };
 
 #endif // MMU_H

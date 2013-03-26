@@ -9,23 +9,31 @@ z80::z80(z80mmu *mmu) {
 }
 
 void z80::cycle() {
+	last_m = 0;
+
 	quint16 progcount = pc.getfull();
 	quint8 opcode = getbytearg();
 	call(opcode);
 
-	if (!setticks || assfailed) {
+	if (last_m == 0 || assfailed) {
 		std::cerr << "PC: " << progcount << ", opcode: " << std::hex << (int)opcode << std::endl;
 		assert(false && "Opcode failed!!");
 	}
-	setticks = false;
+
+	if(interupt_enable) {
+		if (mmu->readandclearinterrupt(0x1)) {
+			op_rst40();
+		}
+	}
 }
 
 void z80::reset() {
 	clock_m = 0;
 	clock_t = 0;
+	last_m = 0;
 	setticks = false;
 	assfailed = false;
-	iff = false;
+	interupt_enable = true;
 
 	af.reset();
 	bc.reset();
@@ -37,8 +45,8 @@ void z80::reset() {
 	alu.setregisters(&af, &hl);
 }
 
-int z80::get_t() {
-	return clock_t;
+int z80::get_m() {
+	return last_m;
 }
 
 quint8 z80::getbyteregisterval(int code) {
@@ -123,9 +131,9 @@ quint16 z80::popstack() {
 }
 
 void z80::addticks(int m, int t) {
+	last_m += m;
 	clock_m += m;
 	clock_t += t;
-	setticks = true;
 }
 
 bool z80::jumpcond(int arg) {
@@ -157,7 +165,7 @@ void z80::call(quint8 opcode) {
 		case 0:
 			if (mid3 == 0) op_nop();
 			else if (mid3 == 1) op_ld_mm_sp();
-			else if (mid3 == 2) ; // should have STOPped
+			else if (mid3 == 2) op_nop(); // Actually STOP opcode
 			else if (mid3 >= 3) op_jump_rel(mid3);
 			break;
 		case 1:
@@ -544,12 +552,12 @@ void z80::op_halt() {
 }
 
 void z80::op_di() {
-	iff = false;
+	interupt_enable = false;
 	addticks(1, 4);
 }
 
 void z80::op_ei() {
-	iff = true;
+	interupt_enable = true;
 	addticks(1, 4);
 }
 
@@ -800,8 +808,7 @@ void z80::op_ret_cond(int arg) {
 }
 
 void z80::op_reti() {
-	iff = true;
-	// TODO: check if addticks 1,4 is needed (i.e., calling ei())
+	interupt_enable = true;
 	op_ret();
 }
 
@@ -814,10 +821,16 @@ void z80::op_rst_p(int arg) {
 	addticks(3, 11);
 }
 
+void z80::op_rst40() {
+	interupt_enable = false;
+	pushstack(pc.getfull());
+	pc.setfull(0x0040);
+	addticks(5, 20);
+}
+
 void z80::op_ld_mm_sp() {
-	assert(false && "ld_mm_sp should have been implemented...");
 	mmu->writeword(getwordarg(), sp.getfull());
-	// TODO: figure out addticks
+	addticks(3, 10);
 }
 
 void z80::op_ld_a_n(int arg) {
@@ -833,14 +846,14 @@ void z80::op_ld_a_n(int arg) {
 void z80::op_ld_sp_sn() {
 	qint8 offset = getbytearg();
 	sp += offset;
-	addticks(4, 16); // TODO: refine 16
+	addticks(4, 16);
 }
 
 void z80::op_ld_hl_sp_sn() {
 	qint8 offset = getbytearg();
 	quint16 val = sp.getfull() + offset;
 	hl.setfull(val);
-	addticks(3, 12); // TODO: refine 12
+	addticks(3, 12);
 }
 
 void z80::op_ld_a_c(int arg) {
@@ -850,7 +863,7 @@ void z80::op_ld_a_c(int arg) {
 	} else {
 		af.sethi(mmu->readbyte(addr));
 	}
-	addticks(2, 8); // TODO: refine 8
+	addticks(2, 8);
 }
 
 void z80::op_ld_a_nn(int arg) {
@@ -860,7 +873,7 @@ void z80::op_ld_a_nn(int arg) {
 	} else {
 		af.sethi(mmu->readbyte(addr));
 	}
-	addticks(4, 16); // TODO: refine 16
+	addticks(4, 16);
 }
 
 void z80::op_swap(int arg) {
