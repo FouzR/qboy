@@ -1,8 +1,5 @@
 #include "gbgpu.h"
 
-#include <cassert>
-#include <iostream>
-
 gbgpu::gbgpu() {
 	reset();
 }
@@ -45,6 +42,7 @@ void gbgpu::reset() {
 
 void gbgpu::step(int z80m) {
 	modeclock += z80m;
+	updated = false;
 
 	switch (mode) {
 	case 2:
@@ -324,12 +322,10 @@ void gbgpu::buildsprite(int num) {
 	sprites[num].belowbg = flags & 0x80;
 }
 
-int gbgpu::readandclearinterrupt() {
+int gbgpu::getinterrupts() {
 	int response = 0;
 	response |= updated ? 1 : 0;
 	response |= line == linecmp ? 2 : 0;
-
-	updated = false;
 
 	return response;
 }

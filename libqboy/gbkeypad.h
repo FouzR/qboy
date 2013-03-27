@@ -23,9 +23,11 @@ public:
 	void keydown(GBKeypadKey key);
 	void writebyte(quint16 address, quint8 value);
 	quint8 readbyte(quint16 address);
+	bool readandclearinterrupt();
 private:
 	quint8 row0, row1;
 	quint8 column;
+	bool interrupt;
 };
 
 #endif // GBKEYPAD_H

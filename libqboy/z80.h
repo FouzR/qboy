@@ -102,6 +102,7 @@ private:
 	void op_ld_a_c(int arg);
 	void op_ld_a_nn(int arg);
 	void op_swap(int arg);
+	void op_daa();
 };
 
 #endif // Z80_H

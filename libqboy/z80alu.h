@@ -27,6 +27,7 @@ public:
 	quint8 sla(quint8 val);
 	quint8 sra(quint8 val);
 	quint8 srl(quint8 val);
+	void daa();
 private:
 	z80register *af, *hl;
 };

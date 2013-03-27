@@ -225,15 +225,17 @@ void z80mmu::writeword(quint16 address, quint16 value) {
 bool z80mmu::readandclearinterrupt(quint8 mask) {
 	getinterrupts();
 
-	quint8 iflag = mask & interrupt_enabled & interrupt_flag;
-	if (iflag) {
-		interrupt_flag &= ~mask;
-		return true;
-	}
-	return false;
+	quint8 iflag = interrupt_enabled & interrupt_flag;
+	iflag &= mask;
+	//if (iflag)
+	if (iflag) interrupt_flag &= ~mask;
+	return (iflag != 0) ? true : false;
 }
 
 void z80mmu::getinterrupts() {
-	interrupt_flag |= (0x3 & gpu->readandclearinterrupt());
-	interrupt_flag |= timer->readandclearinterrupt() ? 0x4 : 0;
+	interrupt_flag = 0;
+	interrupt_flag |= (0x1 & gpu->getinterrupts());
+
+	//interrupt_flag |= timer->readandclearinterrupt() ? 0x4 : 0;
+	//interrupt_flag |= keypad->readandclearinterrupt() ? 0x10 : 0;
 }

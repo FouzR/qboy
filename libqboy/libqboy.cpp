@@ -6,9 +6,9 @@ libqboy::libqboy() : cpu(&mmu) {
 }
 
 void libqboy::reset() {
-	cpu.reset();
-	mmu.reset();
 	timer.reset();
+	mmu.reset();
+	cpu.reset();
 }
 
 void libqboy::loadgame(std::istream &in) {
@@ -20,9 +20,9 @@ quint8 *libqboy::getLCD() {
 }
 
 void libqboy::cycle() {
+	gpu.step(cpu.get_m());
 	cpu.cycle();
 	timer.inc(cpu.get_m());
-	gpu.step(cpu.get_m());
 }
 
 int libqboy::get_elapsed_time() {

@@ -15,6 +15,7 @@ void gbkeypad::keydown(GBKeypadKey key) {
 	case GBKeypadKey_SELECT: row0 &= 0xB; break;
 	case GBKeypadKey_START: row0 &= 0x7; break;
 	}
+	interrupt = true;
 }
 
 void gbkeypad::keyup(GBKeypadKey key) {
@@ -33,6 +34,7 @@ void gbkeypad::keyup(GBKeypadKey key) {
 void gbkeypad::reset() {
 	row0 = row1 = 0x0F;
 	column = 0;
+	interrupt = false;
 }
 
 void gbkeypad::writebyte(quint16, quint8 value) {
@@ -47,4 +49,12 @@ quint8 gbkeypad::readbyte(quint16) {
 		return row1;
 	}
 	return 0;
+}
+
+bool gbkeypad::readandclearinterrupt() {
+	if (interrupt) {
+		interrupt = false;
+		return true;
+	}
+	return false;
 }

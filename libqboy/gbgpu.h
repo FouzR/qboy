@@ -32,7 +32,7 @@ public:
 	quint8 getvreg(quint16 address);
 	void setoam(quint16 address, quint8 val);
 	quint8 getoam(quint16 address);
-	int readandclearinterrupt();
+	int getinterrupts();
 private:
 	quint8 screen_buffer[_GBGPU_H][_GBGPU_W][4];
 
