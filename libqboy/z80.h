@@ -25,7 +25,7 @@ private:
 	z80mmu *mmu;
 	z80alu alu;
 	z80register af, bc, de, hl, sp, pc;
-	bool setticks;
+	bool halted;
 	bool assfailed;
 
 	quint8 getbytearg();
@@ -94,7 +94,7 @@ private:
 	void op_ret_cond(int arg);
 	void op_reti();
 	void op_rst_p(int arg);
-	void op_rst40();
+	void op_rst_int(int address);
 	void op_ld_mm_sp();
 	void op_ld_a_n(int arg);
 	void op_ld_sp_sn();

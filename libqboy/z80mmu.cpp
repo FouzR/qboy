@@ -6,9 +6,10 @@ z80mmu::z80mmu() {
 	reset();
 }
 
-void z80mmu::attach(gbgpu *gpu, gbkeypad *keypad) {
+void z80mmu::attach(gbgpu *gpu, gbkeypad *keypad, z80timer *timer) {
 	this->gpu = gpu;
 	this->keypad = keypad;
+	this->timer = timer;
 }
 
 void z80mmu::reset() {
@@ -104,11 +105,19 @@ quint8 z80mmu::readbyte(quint16 address) {
 			} else {
 				switch(address & 0xF0) {
 				case 0x00:
-					if (address == 0xFF0F) {
+					switch (address & 0xF) {
+					case 0x0:
+						return keypad->readbyte(address);
+					case 0x4:
+					case 0x5:
+					case 0x6:
+					case 0x7:
+						return timer->getbyte(address);
+					case 0xF:
 						getinterrupts();
 						return interrupt_flag;
 					}
-					return keypad->readbyte(address);
+					break;
 				case 0x10: case 0x20: case 0x30:
 					return 0;
 				case 0x40: case 0x50: case 0x60: case 0x70:
@@ -184,8 +193,17 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 			} else {
 				switch(address & 0xF0) {
 				case 0x00:
-					if (address == 0xFF0F) interrupt_flag = value;
-					keypad->writebyte(address, value);
+					switch (address & 0xF) {
+					case 0x0:
+						keypad->writebyte(address, value); break;
+					case 0x4:
+					case 0x5:
+					case 0x6:
+					case 0x7:
+						timer->setbyte(address, value); break;
+					case 0xF:
+						interrupt_flag = value; break;
+					}
 					break;
 				case 0x10: case 0x20: case 0x30:
 					break;
@@ -216,7 +234,6 @@ bool z80mmu::readandclearinterrupt(quint8 mask) {
 }
 
 void z80mmu::getinterrupts() {
-	if (gpu->readandclearinterrupt()) {
-		interrupt_flag |= 0x1;
-	}
+	interrupt_flag |= (0x3 & gpu->readandclearinterrupt());
+	interrupt_flag |= timer->readandclearinterrupt() ? 0x4 : 0;
 }

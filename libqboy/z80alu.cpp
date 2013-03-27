@@ -16,7 +16,11 @@ void z80alu::add(quint8 b, bool withcarry) {
 	quint8 res = a + b;
 
 	af->setflag('z', res == 0);
-	af->setflag('h', (a & 0x0F) + (b & 0x0F) > 0x0F);
+	if (withcarry && carry == 1) {
+		af->setflag('h', (a & 0x0F) + ((b - 1) & 0x0F) + 1 > 0x0F);
+	} else {
+		af->setflag('h', (a & 0x0F) + (b & 0x0F) > 0x0F);
+	}
 	af->setflag('n', false);
 	af->setflag('c', a > 0xFF - b);
 
@@ -30,7 +34,11 @@ void z80alu::sub(quint8 b, bool withcarry) {
 	quint8 res = a - b;
 
 	af->setflag('z', res == 0);
-	af->setflag('h', (a & 0x0F) < (b & 0x0F));
+	if (withcarry && carry == 1) {
+		af->setflag('h', (a & 0x0F) < ((b - 1) & 0x0F) + 1);
+	} else {
+		af->setflag('h', (a & 0x0F) < (b & 0x0F));
+	}
 	af->setflag('n', true);
 	af->setflag('c', a < b);
 

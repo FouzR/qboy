@@ -17,7 +17,8 @@ SOURCES += libqboy.cpp \
     z80mmu.cpp \
     z80register.cpp \
     gbgpu.cpp \
-    gbkeypad.cpp
+    gbkeypad.cpp \
+    z80timer.cpp
 
 HEADERS += libqboy.h\
         libqboy_global.h \
@@ -26,7 +27,8 @@ HEADERS += libqboy.h\
     z80mmu.h \
     z80register.h \
     gbgpu.h \
-    gbkeypad.h
+    gbkeypad.h \
+    z80timer.h
 
 unix:!symbian {
     maemo5 {

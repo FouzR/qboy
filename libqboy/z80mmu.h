@@ -5,6 +5,7 @@
 
 #include "gbgpu.h"
 #include "gbkeypad.h"
+#include "z80timer.h"
 
 #include <istream>
 #include <vector>
@@ -12,7 +13,7 @@
 class z80mmu {
 public:
 	z80mmu();
-	void attach(gbgpu *gpu, gbkeypad *keypad);
+	void attach(gbgpu *gpu, gbkeypad *keypad, z80timer *timer);
 	void reset();
 	void load(std::istream &in);
 	void outofbios();
@@ -26,6 +27,7 @@ private:
 	bool inbios;
 	gbgpu *gpu;
 	gbkeypad *keypad;
+	z80timer *timer;
 	std::vector<quint8> bios, rom, eram, wram, zram;
 	quint8 interrupt_enabled, interrupt_flag;
 

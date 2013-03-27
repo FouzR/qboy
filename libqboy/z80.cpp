@@ -11,19 +11,36 @@ z80::z80(z80mmu *mmu) {
 void z80::cycle() {
 	last_m = 0;
 
-	quint16 progcount = pc.getfull();
-	quint8 opcode = getbytearg();
-	call(opcode);
-
-	if (last_m == 0 || assfailed) {
-		std::cerr << "PC: " << progcount << ", opcode: " << std::hex << (int)opcode << std::endl;
-		assert(false && "Opcode failed!!");
-	}
+	quint16 progcount = 0;
+	quint8 opcode = 0;
 
 	if(interupt_enable) {
 		if (mmu->readandclearinterrupt(0x1)) {
-			op_rst40();
+			halted = false;
+			op_rst_int(0x40);
+			return;
+		} else if (mmu->readandclearinterrupt(0x2)) {
+			halted = false;
+			op_rst_int(0x48);
+			return;
+		} else if (mmu->readandclearinterrupt(0x4)) {
+			halted = false;
+			op_rst_int(0x50);
+			return;
 		}
+	}
+
+	if (halted) {
+		op_nop();
+	} else {
+		progcount = pc.getfull();
+		opcode = getbytearg();
+		call(opcode);
+	}
+
+	if (last_m == 0 || assfailed) {
+		std::cerr << "PC: " << std::hex << progcount << ", opcode: " << (int)opcode << std::endl;
+		assert(false && "Opcode failed!!");
 	}
 }
 
@@ -31,7 +48,7 @@ void z80::reset() {
 	clock_m = 0;
 	clock_t = 0;
 	last_m = 0;
-	setticks = false;
+	halted = false;
 	assfailed = false;
 	interupt_enable = true;
 
@@ -115,19 +132,14 @@ quint16 z80::getwordarg() {
 }
 
 void z80::pushstack(quint16 val) {
-	sp -= 1;
-	mmu->writebyte(sp.getfull(), val >> 8);
-	sp -= 1;
-	mmu->writebyte(sp.getfull(), val & 0xFF);
+	sp -= 2;
+	mmu->writeword(sp.getfull(), val);
 }
 
 quint16 z80::popstack() {
-	quint16 hi, lo;
-	lo = mmu->readbyte(sp.getfull());
-	sp += 1;
-	hi = mmu->readbyte(sp.getfull());
-	sp += 1;
-	return (hi << 8) | lo;
+	quint16 ret = mmu->readword(sp.getfull());
+	sp += 2;
+	return ret;
 }
 
 void z80::addticks(int m, int t) {
@@ -207,7 +219,7 @@ void z80::call(quint8 opcode) {
 		}
 		break;
 	case 1:
-		if (mid3 == 6 && low3 == 6) assert(false && "should have HALTed");
+		if (mid3 == 6 && low3 == 6) op_halt();
 		else op_ld_r_r(mid3, low3);
 		break;
 	case 2:
@@ -412,7 +424,7 @@ void z80::op_ld_sp_hl() {
 }
 
 void z80::op_push_qq(int arg) {
-	pushstack(getwordregisterval(arg, false));	
+	pushstack(getwordregisterval(arg, false));
 	addticks(3, 11);
 }
 
@@ -547,8 +559,8 @@ void z80::op_scf() {
 }
 
 void z80::op_halt() {
-	// if???
-	assert(false && "Halt called, not implemented");
+	halted = true;
+	addticks(1, 4);
 }
 
 void z80::op_di() {
@@ -709,6 +721,9 @@ void z80::op_bit(int bit, int arg) {
 		af.setflag('z', ans & test);
 		addticks(2, 8);
 	}
+
+	af.setflag('n', false);
+	af.setflag('h', true);
 }
 
 void z80::op_set(int bit, int arg) {
@@ -821,10 +836,10 @@ void z80::op_rst_p(int arg) {
 	addticks(3, 11);
 }
 
-void z80::op_rst40() {
+void z80::op_rst_int(int address) {
 	interupt_enable = false;
 	pushstack(pc.getfull());
-	pc.setfull(0x0040);
+	pc.setfull(address);
 	addticks(5, 20);
 }
 
@@ -891,4 +906,9 @@ void z80::op_swap(int arg) {
 		setbyteregisterval(arg, ans);
 		addticks(2, 8);
 	}
+
+	af.setflag('z', ans == 0);
+	af.setflag('n', false);
+	af.setflag('h', false);
+	af.setflag('c', false);
 }

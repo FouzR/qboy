@@ -324,10 +324,12 @@ void gbgpu::buildsprite(int num) {
 	sprites[num].belowbg = flags & 0x80;
 }
 
-bool gbgpu::readandclearinterrupt() {
-	if (updated) {
-		updated = false;
-		return true;
-	}
-	return false;
+int gbgpu::readandclearinterrupt() {
+	int response = 0;
+	response |= updated ? 1 : 0;
+	response |= line == linecmp ? 2 : 0;
+
+	updated = false;
+
+	return response;
 }

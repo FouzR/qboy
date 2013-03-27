@@ -22,6 +22,7 @@ public:
 private:
 	z80 cpu;
 	z80mmu mmu;
+	z80timer timer;
 	gbgpu gpu;
 	gbkeypad keypad;
 };
