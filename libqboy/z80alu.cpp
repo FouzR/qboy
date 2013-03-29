@@ -92,7 +92,7 @@ quint8 z80alu::dec(quint8 a) {
 	quint8 res = a - 1;
 
 	af->setflag('z', res == 0);
-	af->setflag('h', (a & 0x0F) < 1);
+	af->setflag('h', (a & 0x0F) == 0);
 	af->setflag('n', true);
 
 	return res;
@@ -153,7 +153,7 @@ quint8 z80alu::rrc(quint8 val, bool zflag) {
 
 quint8 z80alu::rl(quint8 val, bool zflag) {
 	quint8 bit = af->getflag('c') ? 1 : 0;
-	af->setflag('c', val & 0x80);
+	af->setflag('c', (val & 0x80) == 0x80);
 	quint8 ans = (val << 1) | bit;
 
 	af->setflag('h', false);
@@ -165,7 +165,6 @@ quint8 z80alu::rl(quint8 val, bool zflag) {
 
 quint8 z80alu::rlc(quint8 val, bool zflag) {
 	quint8 bit = val >> 7;
-	assert (bit == 0 || bit == 1); // TODO: REMOVE ME
 	af->setflag('c', bit == 1);
 	quint8 ans = (val << 1) | bit;
 
@@ -177,7 +176,7 @@ quint8 z80alu::rlc(quint8 val, bool zflag) {
 }
 
 quint8 z80alu::sla(quint8 val) {
-	af->setflag('c', val & 0x80);
+	af->setflag('c', (val & 0x80) == 0x80);
 	val <<= 1;
 
 	af->setflag('z', val == 0);
@@ -199,7 +198,7 @@ quint8 z80alu::sra(quint8 val) {
 }
 
 quint8 z80alu::srl(quint8 val) {
-	af->setflag('c', val & 1);
+	af->setflag('c', (val & 1) == 1);
 	val >>= 1;
 
 	af->setflag('z', val == 0);

@@ -718,7 +718,8 @@ void z80::op_srl(int arg) {
 
 void z80::op_bit(int bit, int arg) {
 	quint8 ans;
-	quint8 test = (1 << bit);
+	quint8 test = 1 << bit;
+
 	if (arg == 6) {
 		quint16 addr = hl.getfull();
 		ans = mmu->readbyte(addr);
@@ -728,14 +729,14 @@ void z80::op_bit(int bit, int arg) {
 		addticks(2, 8);
 	}
 
-	af.setflag('z', ans & test);
+	af.setflag('z', !(ans & test));
 	af.setflag('n', false);
 	af.setflag('h', true);
 }
 
 void z80::op_set(int bit, int arg) {
 	quint8 ans;
-	quint8 test = (1 << bit);
+	quint8 test = 1 << bit;
 
 	if (arg == 6) {
 		quint16 addr = hl.getfull();
@@ -751,16 +752,16 @@ void z80::op_set(int bit, int arg) {
 
 void z80::op_res(int bit, int arg) {
 	quint8 ans;
-	quint8 test = ~(1 << bit);
+	quint8 test = 1 << bit;
 
 	if (arg == 6) {
 		quint16 addr = hl.getfull();
 		ans = mmu->readbyte(addr);
-		mmu->writebyte(addr, ans & test);
+		mmu->writebyte(addr, ans & ~test);
 		addticks(4, 15);
 	} else {
 		ans = getbyteregisterval(arg);
-		setbyteregisterval(arg, ans & test);
+		setbyteregisterval(arg, ans & ~test);
 		addticks(2, 8);
 	}
 }

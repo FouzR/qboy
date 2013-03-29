@@ -119,18 +119,10 @@ void gbgpu::setvreg(quint16 address, quint8 val) {
 		linecmp = val;
 		break;
 
-	/*
 	// OAM DMA
 	case 6:
-		var v;
-		for(var i=0; i<160; i++)
-		{
-			v = MMU.rb((val<<8)+i);
-			GPU._oam[i] = v;
-			GPU.updateoam(0xFE00+i, v);
-		}
+		// This is handled by the MMU
 		break;
-	*/
 
 	// BG palette mapping
 	case 7:
@@ -281,28 +273,29 @@ void gbgpu::renderscan() {
 		for (int i = 0; i < _GBGPU_SPRITENUM; ++i) {
 			gbgpu_sprite sprite = sprites[i];
 
-			if (line >= sprite.y && line < sprite.y + 8) {
-				int tiley = sprite.yflip
-						? 7 - (line - sprite.y)
-						: line - sprite.y;
+			if (line < sprite.y || line >= sprite.y + 8)
+				continue;
 
-				quint16 tileaddress = sprite.tile * 16 + tiley * 2;
-				quint8 byte1 = vram[tileaddress];
-				quint8 byte2 = vram[tileaddress + 1];
+			int tiley = sprite.yflip
+					? 7 - (line - sprite.y)
+					: line - sprite.y;
 
-				for (int x = 0; x < 8; ++x) {
-					int tilex = sprite.xflip ? 7 - x : x;
-					if (sprite.x + x < 0 || sprite.x + x >= 160) continue;
+			quint16 tileaddress = sprite.tile * 16 + tiley * 2;
+			quint8 byte1 = vram[tileaddress];
+			quint8 byte2 = vram[tileaddress + 1];
 
-					int colnr = (byte1 & (1 << tilex)) ? 1 : 0;
-					colnr |= (byte2 & (1 << tilex)) ? 2 : 0;
-					int colour = (sprite.pallete1) ? pallete_obj1[colnr] : pallete_obj0[colnr];
+			for (int x = 0; x < 8; ++x) {
+				int tilex = sprite.xflip ? x : 7 - x; // bits are stored in 'wrong' order
+				if (sprite.x + x < 0 || sprite.x + x >= 160) continue;
 
-					if (colour == 255) continue;
-					if (sprite.belowbg && screen_buffer[line][sprite.x][0] != 255) continue;
+				int colnr = (byte1 & (1 << tilex)) ? 1 : 0;
+				colnr |= (byte2 & (1 << tilex)) ? 2 : 0;
+				int colour = sprite.pallete1 ? pallete_obj1[colnr] : pallete_obj0[colnr];
 
-					screen_buffer[line][sprite.x + x][0] = screen_buffer[line][sprite.x + x][1] = screen_buffer[line][sprite.x + x][2] = colour;
-				}
+				if (colour == 255) continue;
+				if (sprite.belowbg && screen_buffer[line][sprite.x + x][0] != 255) continue;
+
+				screen_buffer[line][sprite.x + x][0] = screen_buffer[line][sprite.x + x][1] = screen_buffer[line][sprite.x + x][2] = colour;
 			}
 		}
 	}
@@ -316,10 +309,10 @@ void gbgpu::buildsprite(int num) {
 	sprites[num].tile = oam[oambase + 2];
 
 	quint8 flags = oam[oambase + 3];
-	sprites[num].pallete1 = flags & 0x10;
-	sprites[num].xflip = flags & 0x20;
-	sprites[num].yflip = flags & 0x40;
-	sprites[num].belowbg = flags & 0x80;
+	sprites[num].pallete1 = (flags & 0x10) == 0x10;
+	sprites[num].xflip = (flags & 0x20) == 0x20;
+	sprites[num].yflip = (flags & 0x40) == 0x40;
+	sprites[num].belowbg = (flags & 0x80) == 0x80;
 }
 
 int gbgpu::getinterrupts() {

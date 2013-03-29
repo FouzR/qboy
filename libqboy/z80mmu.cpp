@@ -208,6 +208,13 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 				case 0x10: case 0x20: case 0x30:
 					break;
 				case 0x40: case 0x50: case 0x60: case 0x70:
+					if (address == 0xFF46) {
+						// OAM DMA
+						for(quint8 i = 0; i < 0xA0; ++i) {
+							quint16 newaddr = value;
+							gpu->setoam(i, readbyte((newaddr << 8) | i));
+						}
+					}
 					gpu->setvreg(address, value);
 					break;
 				}
