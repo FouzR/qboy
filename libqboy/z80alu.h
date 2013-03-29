@@ -6,7 +6,6 @@
 
 class z80alu {
 public:
-	z80alu();
 	void setregisters(z80register *afregister, z80register *hlregister);
 	void add(quint8 val, bool withcarry);
 	void sub(quint8 val, bool withcarry);
@@ -20,16 +19,18 @@ public:
 	void ccf();
 	void scf();
 	void add16(quint16 val);
-	quint8 rr(quint8 val, bool zflag = true);
-	quint8 rrc(quint8 val, bool zflag = true);
-	quint8 rl(quint8 val, bool zflag = true);
-	quint8 rlc(quint8 val, bool zflag = true);
+	quint16 add16mixed(quint16 a, qint8 other);
+	quint8 rr(quint8 val);
+	quint8 rrc(quint8 val);
+	quint8 rl(quint8 val);
+	quint8 rlc(quint8 val);
 	quint8 sla(quint8 val);
 	quint8 sra(quint8 val);
 	quint8 srl(quint8 val);
 	void daa();
 private:
 	z80register *af, *hl;
+	void setregistersaftershift(quint8 result, quint8 carry);
 };
 
 #endif // Z80ALU_H

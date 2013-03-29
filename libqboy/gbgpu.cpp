@@ -88,11 +88,11 @@ quint8 *gbgpu::getLCD() {
 }
 
 void gbgpu::setvram(quint16 address, quint8 val) {
-	vram[address] = val;
+	vram[address & 0x1FFF] = val;
 }
 
 quint8 gbgpu::getvram(quint16 address) {
-	return vram[address];
+	return vram[address & 0x1FFF];
 }
 
 void gbgpu::setvreg(quint16 address, quint8 val) {

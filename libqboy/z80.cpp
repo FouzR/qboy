@@ -18,7 +18,7 @@ void z80::cycle() {
 
 	if(interupt_enable) {
 		for (int i = 0; i < 5; ++i) {
-			if (mmu->readandclearinterrupt(1 << i)) {
+			if (mmu->readandclearinterrupt(i)) {
 				halted = false;
 				op_rst_int(0x0040 | (i << 3));
 				return;
@@ -29,6 +29,7 @@ void z80::cycle() {
 	if (halted) {
 		op_nop();
 	} else {
+		if (pc.getfull() == 0x0100) mmu->outofbios();
 		progcount = pc.getfull();
 		opcode = getbytearg();
 		call(opcode);
@@ -112,21 +113,12 @@ void z80::setwordregisterval(int code, bool lastsp, quint16 val) {
 quint8 z80::getbytearg() {
 	quint8 retval = mmu->readbyte(pc.getfull());
 	pc += 1;
-	if (pc.getfull() == 0x0100) mmu->outofbios();
 	return retval;
 }
 
 quint16 z80::getwordarg() {
-	quint16 retval;
-	quint8 byte1, byte2;
-
-	byte1 = getbytearg();
-	byte2 = getbytearg();
-
-	retval = byte2;
-	retval <<= 8;
-	retval |= byte1;
-
+	quint16 retval = mmu->readword(pc.getfull());
+	pc += 2;
 	return retval;
 }
 
@@ -312,11 +304,10 @@ void z80::call(quint8 opcode) {
 
 void z80::call_extended() {
 	int opcode = getbytearg();
-	int arg = opcode & 7;
-	opcode >>= 3;
 
-	int hi2 = opcode >> 3;
-	int mid3 = opcode & 7;
+	int arg = opcode & 7;
+	int hi2 = opcode >> 6;
+	int mid3 = (opcode >> 3) & 7;
 
 	switch (hi2) {
 	case 0:
@@ -415,8 +406,7 @@ void z80::op_ld_a_hl(int arg) {
 }
 
 void z80::op_ld_dd_nn(int arg) {
-	quint16 nn = getwordarg();
-	setwordregisterval(arg, true, nn);
+	setwordregisterval(arg, true, getwordarg());
 	addticks(3, 10);
 }
 
@@ -595,9 +585,9 @@ void z80::op_dec16_rr(int arg) {
 void z80::op_rdca(Direction dir) {
 	quint8 ans = af.gethi();
 	if (dir == Direction_LEFT) {
-		ans = alu.rlc(ans, false);
+		ans = alu.rlc(ans);
 	} else {
-		ans = alu.rrc(ans, false);
+		ans = alu.rrc(ans);
 	}
 	af.sethi(ans);
 
@@ -607,9 +597,9 @@ void z80::op_rdca(Direction dir) {
 void z80::op_rda(Direction dir) {
 	quint8 ans = af.gethi();
 	if (dir == Direction_LEFT) {
-		ans = alu.rl(ans, false);
+		ans = alu.rl(ans);
 	} else {
-		ans = alu.rr(ans, false);
+		ans = alu.rr(ans);
 	}
 	af.sethi(ans);
 
@@ -725,7 +715,7 @@ void z80::op_bit(int bit, int arg) {
 		addticks(2, 8);
 	}
 
-	af.setflag('z', !(ans & test));
+	af.setflag('z', (ans & test) == 0);
 	af.setflag('n', false);
 	af.setflag('h', true);
 }
@@ -862,14 +852,12 @@ void z80::op_ld_a_n(int arg) {
 }
 
 void z80::op_ld_sp_sn() {
-	qint8 offset = getbytearg();
-	sp += offset;
+	sp.setfull(alu.add16mixed(sp.getfull(), getbytearg()));
 	addticks(4, 16);
 }
 
 void z80::op_ld_hl_sp_sn() {
-	qint8 offset = getbytearg();
-	hl.setfull(sp.getfull() + offset);
+	hl.setfull(alu.add16mixed(sp.getfull(), getbytearg()));
 	addticks(3, 12);
 }
 

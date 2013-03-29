@@ -1,10 +1,5 @@
 #include "z80alu.h"
 
-#include <cassert>
-
-z80alu::z80alu() {
-}
-
 void z80alu::setregisters(z80register *afregister, z80register *hlregister) {
 	af = afregister;
 	hl = hlregister;
@@ -127,85 +122,77 @@ void z80alu::add16(quint16 b) {
 	hl->setfull(res);
 }
 
-quint8 z80alu::rr(quint8 val, bool zflag) {
-	quint8 bit = af->getflag('c') ? 1 : 0;
-	af->setflag('c', (val & 1) == 1);
-	quint8 ans = (val >> 1) | (bit << 7);
+quint16 z80alu::add16mixed(quint16 a, qint8 b) {
+	quint16 other = (quint16) (((qint16)(b << 8)) >> 8);
 
-	af->setflag('h', false);
+	af->setflag('z', false);
 	af->setflag('n', false);
-	if (zflag) af->setflag('z', ans == 0);
+	af->setflag('h', (a & 0x000F) + (other & 0x000F) > 0x000F);
+	af->setflag('c', (a & 0x00FF) + (other & 0x00FF) > 0x00FF);
 
-	return ans;
+	return a + other;
 }
 
-quint8 z80alu::rrc(quint8 val, bool zflag) {
-	quint8 bit = val & 1;
-	af->setflag('c', bit == 1);
-	quint8 ans = (val >> 1) | (bit << 7);
+quint8 z80alu::rr(quint8 val) {
+	quint8 carry = val & 1;
+	quint8 result = (val >> 1) | (af->getflag('c') ? 0x80 : 0);
 
-	af->setflag('h', false);
-	af->setflag('n', false);
-	if (zflag) af->setflag('z', ans == 0);
-
-	return ans;
+	setregistersaftershift(result, carry);
+	return result;
 }
 
-quint8 z80alu::rl(quint8 val, bool zflag) {
-	quint8 bit = af->getflag('c') ? 1 : 0;
-	af->setflag('c', (val & 0x80) == 0x80);
-	quint8 ans = (val << 1) | bit;
+quint8 z80alu::rrc(quint8 val) {
+	quint8 carry = val & 1;
+	quint8 result = (val >> 1) | (carry << 7);
 
-	af->setflag('h', false);
-	af->setflag('n', false);
-	if (zflag) af->setflag('z', ans == 0);
-
-	return ans;
+	setregistersaftershift(result, carry);
+	return result;
 }
 
-quint8 z80alu::rlc(quint8 val, bool zflag) {
-	quint8 bit = val >> 7;
-	af->setflag('c', bit == 1);
-	quint8 ans = (val << 1) | bit;
+quint8 z80alu::rl(quint8 val) {
+	quint8 carry = val & 0x80;
+	quint8 result = (val << 1) | (af->getflag('c') ? 1 : 0);
 
-	af->setflag('h', false);
-	af->setflag('n', false);
-	if (zflag) af->setflag('z', ans == 0);
+	setregistersaftershift(result, carry);
+	return result;
+}
 
-	return ans;
+quint8 z80alu::rlc(quint8 val) {
+	quint8 carry = val & 0x80;
+	quint8 result = (val << 1) | (carry >> 7);
+
+	setregistersaftershift(result, carry);
+	return result;
 }
 
 quint8 z80alu::sla(quint8 val) {
-	af->setflag('c', (val & 0x80) == 0x80);
-	val <<= 1;
+	quint8 carry = val & 0x80;
+	quint8 result = val << 1;
 
-	af->setflag('z', val == 0);
-	af->setflag('h', false);
-	af->setflag('n', false);
-
-	return val;
+	setregistersaftershift(result, carry);
+	return result;
 }
 
+// This is a signed shift right
 quint8 z80alu::sra(quint8 val) {
-	af->setflag('c', (val & 1) == 1);
-	val = (val >> 1) | (val & 0x80);
+	quint8 carry = val & 1;
 
-	af->setflag('z', val == 0);
-	af->setflag('h', false);
-	af->setflag('n', false);
+#if (-2 >> 1) == -1
+	quint8 result = ((qint8)val) >> 1;
+#else
+	quint8 result = (val >> 1) | (val & 0x80);
+#endif
 
-	return val;
+	setregistersaftershift(result, carry);
+	return result;
 }
 
 quint8 z80alu::srl(quint8 val) {
-	af->setflag('c', (val & 1) == 1);
-	val >>= 1;
+	quint8 carry = val & 1;
+	quint8 result = val >> 1;
 
-	af->setflag('z', val == 0);
-	af->setflag('h', false);
-	af->setflag('n', false);
-
-	return val;
+	setregistersaftershift(result, carry);
+	return result;
 }
 
 void z80alu::daa() {
@@ -228,4 +215,12 @@ void z80alu::daa() {
 	af->setflag('z', a == 0);
 
 	af->sethi(a);
+}
+
+void z80alu::setregistersaftershift(quint8 result, quint8 carry) {
+	af->setflag('h', false);
+	af->setflag('n', false);
+
+	af->setflag('z', result == 0);
+	af->setflag('c', carry != 0);
 }
