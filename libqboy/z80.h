@@ -18,9 +18,9 @@ public:
 	void cycle();
 	int get_m();
 private:
-	int clock_m, clock_t;
+	int clock_m;
 	int last_m;
-	bool interupt_enable;
+	bool interrupt_enable;
 
 	z80mmu *mmu;
 	z80alu alu;
@@ -36,7 +36,7 @@ private:
 	void setwordregisterval(int code, bool lastsp, quint16 val);
 	void pushstack(quint16 val);
 	quint16 popstack();
-	void addticks(int m, int t);
+	void addticks(int m);
 
 	bool jumpcond(int arg);
 

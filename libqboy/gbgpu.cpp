@@ -257,22 +257,21 @@ void gbgpu::renderscan() {
 			continue;
 		}
 
-		int tiley = ((posy >> 3)) << 5;
-		int tilex = ((posx >> 3));
+		int tiley = (posy >> 3) & 31;
+		int tilex = (posx >> 3) & 31;
 
 		if (tileset1) {
 			quint8 tilenr;
-			tilenr = vram[mapbase + tiley + tilex];
+			tilenr = vram[mapbase + tiley * 32 + tilex];
 			tileaddress = tilenr * 16;
 		} else {
 			qint8 tilenr; // signed!
-			tileaddress = 0x0800;
-			tilenr = vram[mapbase + tiley + tilex];
-			tileaddress += ((tilenr + 128)*16);
+			tilenr = vram[mapbase + tiley * 32 + tilex];
+			tileaddress = 0x1000 + tilenr * 16;
 		}
 
-		quint8 byte1 = vram[tileaddress + ((posy % 8) * 2)];
-		quint8 byte2 = vram[tileaddress + ((posy % 8) * 2) + 1];
+		quint8 byte1 = vram[tileaddress + ((posy & 0x7) * 2)];
+		quint8 byte2 = vram[tileaddress + ((posy & 0x7) * 2) + 1];
 
 		quint8 xbit = posx % 8;
 		quint8 colnr = (byte1 & (0x80 >> xbit)) ? 1 : 0;
@@ -283,11 +282,15 @@ void gbgpu::renderscan() {
 	}
 
 	if (sprite_on) {
+		int spritenum = 0;
 		for (int i = 0; i < _GBGPU_SPRITENUM; ++i) {
 			gbgpu_sprite sprite = sprites[i];
 
 			if (line < sprite.y || line >= sprite.y + 8)
 				continue;
+
+			spritenum++;
+			if (spritenum > 10) break;
 
 			int tiley = sprite.yflip
 					? 7 - (line - sprite.y)

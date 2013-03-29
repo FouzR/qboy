@@ -227,7 +227,6 @@ void z80mmu::writeword(quint16 address, quint16 value) {
 
 bool z80mmu::readandclearinterrupt(quint8 bit) {
 	getinterrupts();
-
 	quint8 iflag = interrupt_enabled & interrupt_flag;
 	iflag &= (1 << bit);
 	if (iflag) interrupt_flag &= ~(1 << bit);
@@ -237,7 +236,6 @@ bool z80mmu::readandclearinterrupt(quint8 bit) {
 void z80mmu::getinterrupts() {
 	interrupt_flag = 0;
 	interrupt_flag |= (0x3 & gpu->getinterrupts());
-
-	//interrupt_flag |= timer->readandclearinterrupt() ? 0x4 : 0;
+	interrupt_flag |= timer->readandclearinterrupt() ? 0x4 : 0;
 	interrupt_flag |= keypad->readandclearinterrupt() ? 0x10 : 0;
 }
