@@ -15,6 +15,7 @@ public:
 	void stop();
 	void keydown(GBKeypadKey key);
 	void keyup(GBKeypadKey key);
+	void togglespeed();
 
 signals:
 	
@@ -22,6 +23,7 @@ public slots:
 
 private:
 	bool dorun;
+	bool sloweddown;
 	libqboy *qboy;
 };
 

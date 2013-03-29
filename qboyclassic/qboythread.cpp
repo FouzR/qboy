@@ -7,6 +7,7 @@
 
 qboythread::qboythread(QString filename, QObject *parent) : QThread(parent) {
 	dorun = true;
+	sloweddown = true;
 	qboy = new libqboy();
 
 	std::ifstream fin(filename.toStdString().c_str(), std::ios_base::in | std::ios_base::binary);
@@ -27,6 +28,10 @@ quint8* qboythread::getLCD() {
 	return qboy->getLCD();
 }
 
+void qboythread::togglespeed() {
+	sloweddown = !sloweddown;
+}
+
 void qboythread::run() {
 	dorun = true;
 	QElapsedTimer timer;
@@ -40,7 +45,7 @@ void qboythread::run() {
 			int s = gbtime / 1000 - timer.elapsed();
 			s = qMax(0, s);
 			timer.restart();
-			msleep(s);
+			if (sloweddown) msleep(s);
 			gbtime = 0;
 		}
 	}

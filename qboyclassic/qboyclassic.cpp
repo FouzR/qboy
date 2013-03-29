@@ -108,3 +108,7 @@ void QBoyClassic::on_btnpause_clicked() {
 void QBoyClassic::on_btnrestart_clicked() {
 	startGameBoy();
 }
+
+void QBoyClassic::on_btnspeed_clicked() {
+	if (qboyt != 0) qboyt->togglespeed();
+}

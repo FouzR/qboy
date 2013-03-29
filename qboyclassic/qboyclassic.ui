@@ -54,7 +54,7 @@
    <widget class="QPushButton" name="btnload">
     <property name="geometry">
      <rect>
-      <x>70</x>
+      <x>40</x>
       <y>320</y>
       <width>75</width>
       <height>23</height>
@@ -73,7 +73,7 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>250</x>
+      <x>200</x>
       <y>320</y>
       <width>75</width>
       <height>23</height>
@@ -89,7 +89,7 @@
    <widget class="QPushButton" name="btnpause">
     <property name="geometry">
      <rect>
-      <x>160</x>
+      <x>120</x>
       <y>320</y>
       <width>75</width>
       <height>23</height>
@@ -100,6 +100,22 @@
     </property>
     <property name="text">
      <string>Pause</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnspeed">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>320</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
+    </property>
+    <property name="text">
+     <string>Toggle speed</string>
     </property>
    </widget>
   </widget>

@@ -25,6 +25,7 @@ private slots:
 	void on_btnload_clicked();
 	void on_btnpause_clicked();
 	void on_btnrestart_clicked();
+	void on_btnspeed_clicked();
 
 private:
 	Ui::QBoyClassic *ui;
