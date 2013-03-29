@@ -200,8 +200,8 @@ quint8 gbgpu::getvreg(quint16 address) {
 				(int_mode_2 ? 0x20 : 0) |
 				(int_mode_1 ? 0x10 : 0) |
 				(int_mode_0 ? 0x08 : 0) |
-				(line == linecmp ? 4 : 0) |
-				(mode & 0x3);
+				(line == linecmp ? 4 : 0)/* |
+				(mode & 0x3)*/;
 	case 2:
 		return yscroll;
 	case 3:
@@ -305,8 +305,8 @@ void gbgpu::renderscan() {
 				colnr |= (byte2 & (0x80 >> tilex)) ? 2 : 0;
 				int colour = sprite.pallete1 ? pallete_obj1[colnr] : pallete_obj0[colnr];
 
-				if (colour == 255) continue;
-				if (sprite.belowbg && screen_buffer[line][sprite.x + x][0] != 255) continue;
+				// colnr 0 is always transparant, and only draw on white if belowbg
+				if (colnr == 0 || (sprite.belowbg && screen_buffer[line][sprite.x + x][0] != 255)) continue;
 
 				screen_buffer[line][sprite.x + x][0] = screen_buffer[line][sprite.x + x][1] = screen_buffer[line][sprite.x + x][2] = colour;
 			}
