@@ -124,12 +124,14 @@ quint16 z80::getwordarg() {
 
 void z80::pushstack(quint16 val) {
 	sp -= 2;
+	assert(sp.getfull() != 0 && "pushstack");
 	mmu->writeword(sp.getfull(), val);
 }
 
 quint16 z80::popstack() {
 	quint16 ret = mmu->readword(sp.getfull());
 	sp += 2;
+	assert(sp.getfull() != 0 && "popstack");
 	return ret;
 }
 
@@ -239,22 +241,29 @@ void z80::call(quint8 opcode) {
 	case 3:
 		switch (low3) {
 		case 0:
-			if (mid3 < 4) op_ret_cond(mid3);
+			if ((mid3 & 4) == 0) op_ret_cond(mid3);
 			else if ((mid3 & 1) == 0) op_ld_a_n(mid2);
 			else if (mid3 == 5) op_ld_sp_sn();
 			else op_ld_hl_sp_sn();
 			break;
 		case 1:
-			if ((mid3 & 1) == 0) op_pop_qq(mid2);
-			else if (mid3 == 1) op_ret();
-			else if (mid3 == 3) op_reti();
-			else if (mid3 == 5) op_jump_hl();
-			else op_ld_sp_hl();
+			switch (mid3) {
+			case 0: case 2: case 4: case 6:
+				op_pop_qq(mid2); break;
+			case 1:
+				op_ret(); break;
+			case 3:
+				op_reti(); break;
+			case 5:
+				op_jump_hl(); break;
+			case 7:
+				op_ld_sp_hl(); break;
+			}
 			break;
 		case 2:
-			if (mid3 < 4) op_jump_cond(mid3);
-			else if ((mid3 & 1) == 0) op_ld_a_c(mid3);
-			else op_ld_a_nn(mid3);
+			if ((mid3 & 4) == 0) op_jump_cond(mid3);
+			else if ((mid3 & 1) == 0) op_ld_a_c(mid2);
+			else op_ld_a_nn(mid2);
 			break;
 		case 3:
 			switch (mid3) {
@@ -297,6 +306,7 @@ void z80::call(quint8 opcode) {
 			break;
 		case 7:
 			op_rst_p(mid3);
+			break;
 		}
 		break;
 	}
@@ -702,7 +712,7 @@ void z80::op_srl(int arg) {
 	}
 }
 
-void z80::op_bit(int bit, int arg) {
+void z80::op_bit(quint8 bit, int arg) {
 	quint8 ans;
 	quint8 test = 1 << bit;
 
@@ -720,7 +730,7 @@ void z80::op_bit(int bit, int arg) {
 	af.setflag('h', true);
 }
 
-void z80::op_set(int bit, int arg) {
+void z80::op_set(quint8 bit, int arg) {
 	quint8 ans;
 	quint8 test = 1 << bit;
 
@@ -736,7 +746,7 @@ void z80::op_set(int bit, int arg) {
 	}
 }
 
-void z80::op_res(int bit, int arg) {
+void z80::op_res(quint8 bit, int arg) {
 	quint8 ans;
 	quint8 test = 1 << bit;
 
@@ -831,8 +841,10 @@ void z80::op_rst_p(int arg) {
 
 void z80::op_rst_int(int address) {
 	interupt_enable = false;
+
 	pushstack(pc.getfull());
 	pc.setfull(address);
+
 	addticks(5, 20);
 }
 
@@ -863,7 +875,7 @@ void z80::op_ld_hl_sp_sn() {
 
 void z80::op_ld_a_c(int arg) {
 	quint16 addr = 0xFF00 | bc.getlo();
-	if ((arg & 2) == 0) {
+	if ((arg & 1) == 0) {
 		mmu->writebyte(addr, af.gethi());
 	} else {
 		af.sethi(mmu->readbyte(addr));
@@ -873,7 +885,7 @@ void z80::op_ld_a_c(int arg) {
 
 void z80::op_ld_a_nn(int arg) {
 	quint16 addr = getwordarg();
-	if ((arg & 2) == 0) {
+	if ((arg & 1) == 0) {
 		mmu->writebyte(addr, af.gethi());
 	} else {
 		af.sethi(mmu->readbyte(addr));

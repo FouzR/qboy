@@ -33,7 +33,7 @@ void gbkeypad::keyup(GBKeypadKey key) {
 
 void gbkeypad::reset() {
 	row0 = row1 = 0x0F;
-	column = 0;
+	column = 0x30;
 	interrupt = false;
 }
 
@@ -47,6 +47,8 @@ quint8 gbkeypad::readbyte(quint16) {
 		return row0;
 	case 0x20:
 		return row1;
+	case 0x30:
+		return row0 & row1;
 	}
 	return 0;
 }

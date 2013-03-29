@@ -52,6 +52,10 @@ private:
 	quint8 yscroll, xscroll, linecmp;
 	quint8 winxpos, winypos;
 
+	bool int_mode_0;
+	bool int_mode_1;
+	bool int_mode_2;
+	bool int_coincidence;
 
 	std::vector<quint8> vram, vreg, oam;
 	std::vector<gbgpu_sprite> sprites;

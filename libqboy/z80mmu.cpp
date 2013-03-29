@@ -239,5 +239,5 @@ void z80mmu::getinterrupts() {
 	interrupt_flag |= (0x3 & gpu->getinterrupts());
 
 	//interrupt_flag |= timer->readandclearinterrupt() ? 0x4 : 0;
-	//interrupt_flag |= keypad->readandclearinterrupt() ? 0x10 : 0;
+	interrupt_flag |= keypad->readandclearinterrupt() ? 0x10 : 0;
 }

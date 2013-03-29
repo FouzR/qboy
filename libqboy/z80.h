@@ -81,9 +81,9 @@ private:
 	void op_rd_r(int arg, Direction dir);
 	void op_sda(int arg, Direction dir);
 	void op_srl(int arg);
-	void op_bit(int bit, int arg);
-	void op_set(int bit, int arg);
-	void op_res(int bit, int arg);
+	void op_bit(quint8 bit, int arg);
+	void op_set(quint8 bit, int arg);
+	void op_res(quint8 bit, int arg);
 	void op_jump();
 	void op_jump_cond(int arg);
 	void op_jump_rel(int arg);

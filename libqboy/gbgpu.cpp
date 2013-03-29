@@ -28,6 +28,8 @@ void gbgpu::reset() {
 	win_mapbase = 0x1800;
 	updated = false;
 
+	int_mode_0 = int_mode_1 = int_mode_2 = int_coincidence = false;
+
 	for (int y = 0; y < _GBGPU_H; ++y) {
 		for (int x = 0; x < _GBGPU_W; ++x) {
 			for (int c = 0; c < 4; ++c) {
@@ -109,6 +111,12 @@ void gbgpu::setvreg(quint16 address, quint8 val) {
 		sprite_on = (val & 0x02);
 		bg_on = (val & 0x01);
 		break;
+	case 1:
+		int_mode_0 = val & 0x08;
+		int_mode_1 = val & 0x10;
+		int_mode_2 = val & 0x20;
+		int_coincidence = val & 0x40;
+		break;
 	case 2:
 		yscroll = val;
 		break;
@@ -188,7 +196,12 @@ quint8 gbgpu::getvreg(quint16 address) {
 				(sprite_on ? 0x02 : 0) |
 				(bg_on ? 0x01 : 0);
 	case 1:
-		return (line == linecmp ? 4 : 0) | mode;
+		return (int_coincidence ? 0x40 : 0) |
+				(int_mode_2 ? 0x20 : 0) |
+				(int_mode_1 ? 0x10 : 0) |
+				(int_mode_0 ? 0x08 : 0) |
+				(line == linecmp ? 4 : 0) |
+				(mode & 0x3);
 	case 2:
 		return yscroll;
 	case 3:
@@ -318,7 +331,14 @@ void gbgpu::buildsprite(int num) {
 int gbgpu::getinterrupts() {
 	int response = 0;
 	response |= updated ? 1 : 0;
-	response |= line == linecmp ? 2 : 0;
+
+	bool lcdstat = false;
+	lcdstat |= (int_coincidence && line == linecmp);
+	lcdstat |= (int_mode_2 && mode == 2);
+	lcdstat |= (int_mode_1 && mode == 1);
+	lcdstat |= (int_mode_0 && mode == 0);
+
+	response |= lcdstat ? 2 : 0;
 
 	return response;
 }
