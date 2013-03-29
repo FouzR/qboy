@@ -855,7 +855,7 @@ void z80::op_rst_int(int address) {
 
 void z80::op_ld_mm_sp() {
 	mmu->writeword(getwordarg(), sp.getfull());
-	addticks(4);
+	addticks(5);
 }
 
 void z80::op_ld_a_n(int arg) {

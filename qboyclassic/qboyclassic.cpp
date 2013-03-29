@@ -1,29 +1,49 @@
 #include "qboyclassic.h"
 #include "ui_qboyclassic.h"
 
+#include <QMessageBox>
+#include <QFileDialog>
+
 QBoyClassic::QBoyClassic(QWidget *parent) :
     QMainWindow(parent),
 	ui(new Ui::QBoyClassic) {
 
 	ui->setupUi(this);
 
-	// Repaint the label at set intervals
-	timer = new QTimer();
-	timer->setInterval(25);
-	connect(timer, SIGNAL(timeout()), ui->label, SLOT(repaint()));
-	timer->start();
-
-	// Create gameboy
-	qboyt = new qboythread("tetris.gb");
-	qboyt->start();
-
-	ui->label->image = new QImage(qboyt->getLCD(), 160, 144, QImage::Format_RGB32);
+	refreshtimer = new QTimer();
+	connect(refreshtimer, SIGNAL(timeout()), ui->gblabel, SLOT(repaint()));
+	filename = "tetris.gb";
+	qboyt = 0;
 }
 
 QBoyClassic::~QBoyClassic() {
-	delete timer;
+	delete refreshtimer;
 	delete qboyt;
 	delete ui;
+}
+
+void QBoyClassic::startGameBoy() {
+	stopGameBoy();
+
+	QFile gbfile(filename);
+	if (!gbfile.exists()) {
+		QMessageBox::critical(this, "File not found", "The gameboy file could not be found.");
+	} else {
+		qboyt = new qboythread(filename);
+		qboyt->start();
+		ui->gblabel->image = new QImage(qboyt->getLCD(), 160, 144, QImage::Format_RGB32);
+		refreshtimer->start(25);
+		ui->btnpause->setText("Pause");
+	}
+}
+
+void QBoyClassic::stopGameBoy() {
+	refreshtimer->stop();
+	QImage *labelimage = ui->gblabel->image;
+	ui->gblabel->image = 0;
+	if (labelimage != 0) delete labelimage;
+	if (qboyt != 0) delete qboyt;
+	qboyt = 0;
 }
 
 void QBoyClassic::keyPressEvent(QKeyEvent* event) {
@@ -65,4 +85,26 @@ GBKeypadKey QBoyClassic::qtkeytogb(int qtkey) {
 		key = GBKeypadKey_A; break;
 	}
 	return key;
+}
+
+void QBoyClassic::on_btnload_clicked() {
+	filename = QFileDialog::getOpenFileName(this, "Open Gameboy file", QString(), "*.gb");
+	if (filename != "") {
+		ui->btnrestart->setEnabled(true);
+		startGameBoy();
+	}
+}
+
+void QBoyClassic::on_btnpause_clicked() {
+	if (qboyt->isRunning()) {
+		qboyt->stop();
+		ui->btnpause->setText("Continue");
+	} else {
+		qboyt->start();
+		ui->btnpause->setText("Pause");
+	}
+}
+
+void QBoyClassic::on_btnrestart_clicked() {
+	startGameBoy();
 }

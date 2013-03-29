@@ -28,6 +28,7 @@ quint8* qboythread::getLCD() {
 }
 
 void qboythread::run() {
+	dorun = true;
 	QElapsedTimer timer;
 	timer.start();
 

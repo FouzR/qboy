@@ -22,12 +22,18 @@ public:
 	~QBoyClassic();
 
 private slots:
+	void on_btnload_clicked();
+	void on_btnpause_clicked();
+	void on_btnrestart_clicked();
 
 private:
 	Ui::QBoyClassic *ui;
 	qboythread *qboyt;
-	QTimer *timer;
+	QString filename;
+	QTimer *refreshtimer;
 
+	void startGameBoy();
+	void stopGameBoy();
 	void keyPressEvent(QKeyEvent *event);
 	void keyReleaseEvent(QKeyEvent *event);
 	GBKeypadKey qtkeytogb(int qtkey);
@@ -39,17 +45,16 @@ private:
 class ImagePlacer : public QLabel {
 	Q_OBJECT
 public:
-	ImagePlacer(QWidget *parent) : QLabel(parent) {}
+	ImagePlacer(QWidget *parent) : QLabel(parent), image(0) {}
 	QImage *image;
 
-
 	void paintEvent (QPaintEvent *){
-		if (image != 0)
-		{
-		  QPainter painter(this);
-		  painter.drawImage(this->rect(), *image, this->rect());
+		if (image != 0) {
+			QPainter painter(this);
+			QRect r(0, 0, 160, 144);
+			painter.drawImage(this->rect(), *image, r);
 		}
-	  }
+	}
 };
 
 #endif // QBOYCLASSIC_H
