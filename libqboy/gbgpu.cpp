@@ -261,9 +261,9 @@ void gbgpu::renderscan() {
 		quint8 byte1 = vram[tileaddress + ((posy % 8) * 2)];
 		quint8 byte2 = vram[tileaddress + ((posy % 8) * 2) + 1];
 
-		quint8 xbit = 7 - (posx % 8);
-		quint8 colnr = (byte1 & (1u << xbit)) ? 1 : 0;
-		colnr |= (byte2 & (1u << xbit)) ? 2 : 0;
+		quint8 xbit = posx % 8;
+		quint8 colnr = (byte1 & (0x80 >> xbit)) ? 1 : 0;
+		colnr |= (byte2 & (0x80 >> xbit)) ? 2 : 0;
 		colour = pallete_bg[colnr];
 
 		screen_buffer[line][x][0] = screen_buffer[line][x][1] = screen_buffer[line][x][2] = colour;
@@ -285,11 +285,11 @@ void gbgpu::renderscan() {
 			quint8 byte2 = vram[tileaddress + 1];
 
 			for (int x = 0; x < 8; ++x) {
-				int tilex = sprite.xflip ? x : 7 - x; // bits are stored in 'wrong' order
+				int tilex = sprite.xflip ? 7 - x : x;
 				if (sprite.x + x < 0 || sprite.x + x >= 160) continue;
 
-				int colnr = (byte1 & (1 << tilex)) ? 1 : 0;
-				colnr |= (byte2 & (1 << tilex)) ? 2 : 0;
+				int colnr = (byte1 & (0x80 >> tilex)) ? 1 : 0;
+				colnr |= (byte2 & (0x80 >> tilex)) ? 2 : 0;
 				int colour = sprite.pallete1 ? pallete_obj1[colnr] : pallete_obj0[colnr];
 
 				if (colour == 255) continue;

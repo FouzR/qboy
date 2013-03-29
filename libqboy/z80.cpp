@@ -17,19 +17,13 @@ void z80::cycle() {
 	assert(halted == false); // HALT may or may not function properly
 
 	if(interupt_enable) {
-		if (mmu->readandclearinterrupt(0x01)) {
-			halted = false;
-			op_rst_int(0x0040);
-			return;
-		} /*else if (mmu->readandclearinterrupt(0x2)) {
-			halted = false;
-			op_rst_int(0x48);
-			return;
-		} else if (mmu->readandclearinterrupt(0x4)) {
-			halted = false;
-			op_rst_int(0x50);
-			return;
-		}*/
+		for (int i = 0; i < 5; ++i) {
+			if (mmu->readandclearinterrupt(1 << i)) {
+				halted = false;
+				op_rst_int(0x0040 | (i << 3));
+				return;
+			}
+		}
 	}
 
 	if (halted) {
@@ -533,7 +527,8 @@ void z80::op_cp_n() {
 
 void z80::op_inc_r(int arg) {
 	if (arg == 6) {
-		mmu->writebyte(hl.getfull(), alu.inc(mmu->readbyte(hl.getfull())));
+		quint16 addr = hl.getfull();
+		mmu->writebyte(addr, alu.inc(mmu->readbyte(addr)));
 		addticks(3, 11);
 	} else {
 		setbyteregisterval(arg, alu.inc(getbyteregisterval(arg)));
@@ -543,7 +538,8 @@ void z80::op_inc_r(int arg) {
 
 void z80::op_dec_r(int arg) {
 	if (arg == 6) {
-		mmu->writebyte(hl.getfull(), alu.dec(mmu->readbyte(hl.getfull())));
+		quint16 addr = hl.getfull();
+		mmu->writebyte(addr, alu.dec(mmu->readbyte(addr)));
 		addticks(3, 11);
 	} else {
 		setbyteregisterval(arg, alu.dec(getbyteregisterval(arg)));
@@ -757,11 +753,11 @@ void z80::op_res(int bit, int arg) {
 	if (arg == 6) {
 		quint16 addr = hl.getfull();
 		ans = mmu->readbyte(addr);
-		mmu->writebyte(addr, ans & ~test);
+		mmu->writebyte(addr, ans & (~test));
 		addticks(4, 15);
 	} else {
 		ans = getbyteregisterval(arg);
-		setbyteregisterval(arg, ans & ~test);
+		setbyteregisterval(arg, ans & (~test));
 		addticks(2, 8);
 	}
 }
@@ -873,8 +869,7 @@ void z80::op_ld_sp_sn() {
 
 void z80::op_ld_hl_sp_sn() {
 	qint8 offset = getbytearg();
-	quint16 val = sp.getfull() + offset;
-	hl.setfull(val);
+	hl.setfull(sp.getfull() + offset);
 	addticks(3, 12);
 }
 
