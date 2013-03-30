@@ -96,6 +96,7 @@ void QBoyClassic::on_btnload_clicked() {
 }
 
 void QBoyClassic::on_btnpause_clicked() {
+	if (qboyt == 0) return;
 	if (qboyt->isRunning()) {
 		qboyt->stop();
 		ui->btnpause->setText("Continue");
