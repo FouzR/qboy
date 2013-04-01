@@ -1,18 +1,19 @@
 #include "libqboy.h"
 
-libqboy::libqboy() : cpu(&mmu) {
-	mmu.attach(&gpu, &keypad, &timer);
+libqboy::libqboy() : cpu(&mmu), gpu(&mmu), keypad(&mmu), timer(&mmu) {
 	reset();
 }
 
 void libqboy::reset() {
-	timer.reset();
 	mmu.reset();
+	gpu.reset();
+	timer.reset();
+	keypad.reset();
 	cpu.reset();
 }
 
-void libqboy::loadgame(std::istream &in) {
-	mmu.load(in);
+void libqboy::loadgame(std::string filename) {
+	mmu.load(filename);
 }
 
 quint8 *libqboy::getLCD() {
@@ -20,9 +21,10 @@ quint8 *libqboy::getLCD() {
 }
 
 void libqboy::cycle() {
-	gpu.step(cpu.get_m());
 	cpu.cycle();
-	timer.inc(cpu.get_m());
+	gpu.step(cpu.get_m());
+	keypad.step();
+	timer.step(cpu.get_m());
 }
 
 int libqboy::get_elapsed_time() {

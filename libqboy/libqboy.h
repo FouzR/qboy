@@ -6,15 +6,17 @@
 #include "z80.h"
 #include "z80mmu.h"
 #include "gbgpu.h"
+#include "gbkeypad.h"
+#include "z80timer.h"
 
-#include <istream>
+#include <string>
 
 class LIBQBOYSHARED_EXPORT libqboy {
 public:
 	libqboy();
 	void reset();
 	quint8 *getLCD();
-	void loadgame(std::istream &in);
+	void loadgame(std::string filename);
 	void cycle();
 	int get_elapsed_time();
 	void keyup(GBKeypadKey key);

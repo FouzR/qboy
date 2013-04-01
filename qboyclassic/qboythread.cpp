@@ -3,19 +3,18 @@
 #include <fstream>
 #include <cassert>
 #include <QElapsedTimer>
-#include <QDebug>
+#include <QFile>
 
 qboythread::qboythread(QString filename, QObject *parent) : QThread(parent) {
 	dorun = true;
 	sloweddown = true;
 	qboy = new libqboy();
 
-	std::ifstream fin(filename.toStdString().c_str(), std::ios_base::in | std::ios_base::binary);
-	if (!fin.is_open()) {
-		assert(false && "Could not open file");
+	QFile file(filename);
+	if (!file.exists()) {
+		assert(false && "Could not find file");
 	}
-	qboy->loadgame(fin);
-	fin.close();
+	qboy->loadgame(filename.toStdString());
 }
 
 qboythread::~qboythread() {

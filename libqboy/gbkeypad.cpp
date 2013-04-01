@@ -1,7 +1,21 @@
 #include "gbkeypad.h"
 
-gbkeypad::gbkeypad() {
+gbkeypad::gbkeypad(z80mmu *mmu) {
+	this->mmu = mmu;
 	reset();
+}
+
+void gbkeypad::step() {
+	quint8 mem = mmu->readbyte(_GBKEYPAD_MEMADDR);
+	mem &= 0x30;
+	if (mem & 0x10) mem |= row0;
+	if (mem & 0x20) mem |= row1;
+	mmu->writebyte(_GBKEYPAD_MEMADDR, mem);
+
+	if (interrupt) {
+		mmu->writebyte(0xFF0F, mmu->readbyte(0xFF0F) | 0x10);
+	}
+	interrupt = false;
 }
 
 void gbkeypad::keydown(GBKeypadKey key) {
@@ -35,28 +49,4 @@ void gbkeypad::reset() {
 	row0 = row1 = 0x0F;
 	column = 0x30;
 	interrupt = false;
-}
-
-void gbkeypad::writebyte(quint16, quint8 value) {
-	column = value & 0x30;
-}
-
-quint8 gbkeypad::readbyte(quint16) {
-	switch (column) {
-	case 0x10:
-		return row0;
-	case 0x20:
-		return row1;
-	case 0x30:
-		return row0 & row1;
-	}
-	return 0;
-}
-
-bool gbkeypad::readandclearinterrupt() {
-	if (interrupt) {
-		interrupt = false;
-		return true;
-	}
-	return false;
 }

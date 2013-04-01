@@ -1,6 +1,7 @@
 #include "z80timer.h"
 
-z80timer::z80timer() {
+z80timer::z80timer(z80mmu *mmu) {
+	this->mmu = mmu;
 	reset();
 }
 
@@ -10,7 +11,11 @@ void z80timer::reset() {
 	interrupt = false;
 }
 
-void z80timer::inc(int z80m) {
+void z80timer::step(int z80m) {
+	divider = mmu->readbyte(0xFF04);
+	counter = mmu->readbyte(0xFF05);
+	modulo = mmu->readbyte(0xFF06);
+	control = mmu->readbyte(0xFF07);
 	while (z80m > 0) {
 		z80m--;
 
@@ -32,34 +37,18 @@ void z80timer::inc(int z80m) {
 			}
 		}
 	}
+
+	mmu->writebyte(0xFF04, divider);
+	mmu->writebyte(0xFF05, counter);
+	mmu->writebyte(0xFF06, modulo);
+	mmu->writebyte(0xFF07, control);
+
+	if (interrupt) {
+		mmu->writebyte(0xFF0F, mmu->readbyte(0xFF0F) | 0x4);
+	}
+	interrupt = false;
 }
 
-void z80timer::setbyte(quint16 address, quint8 value) {
-	switch (address & 0xFF) {
-	case 4:
-		divider = value; break;
-	case 5:
-		counter = value; break;
-	case 6:
-		modulo = value; break;
-	case 7:
-		control = value; break;
-	}
-}
-
-quint8 z80timer::getbyte(quint16 address) {
-	switch (address & 0xFF) {
-	case 4:
-		return divider;
-	case 5:
-		return counter;
-	case 6:
-		return modulo;
-	case 7:
-		return control;
-	}
-	return 0;
-}
 
 bool z80timer::readandclearinterrupt() {
 	if (interrupt) {

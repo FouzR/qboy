@@ -1,15 +1,9 @@
 #include "z80mmu.h"
 
-z80mmu::z80mmu() {
-	gpu = NULL;
-	keypad = NULL;
-	reset();
-}
+#include <fstream>
 
-void z80mmu::attach(gbgpu *gpu, gbkeypad *keypad, z80timer *timer) {
-	this->gpu = gpu;
-	this->keypad = keypad;
-	this->timer = timer;
+z80mmu::z80mmu() {
+	reset();
 }
 
 void z80mmu::reset() {
@@ -33,23 +27,24 @@ void z80mmu::reset() {
 	inbios = true;
 
 	rom.clear();
-	eram.resize(8192, 0);
-	wram.resize(8192, 0);
-	zram.resize(128, 0);
-
-	interrupt_enabled = 0;
-	interrupt_flag = 0;
-
-	if (gpu != NULL) gpu->reset();
-	if (keypad != NULL) keypad->reset();
+	eram.resize(0x2000, 0);
+	wram.resize(0x2000, 0);
+	vram.resize(0x2000, 0);
+	voam.resize(0xA0, 0);
+	zram.resize(0x100, 0);
 }
 
-void z80mmu::load(std::istream &in) {
+void z80mmu::load(std::string filename) {
 	char byte;
+	std::ifstream fin(filename.c_str(), std::ios_base::in | std::ios_base::binary);
+
+	if (!fin.is_open()) return;
+
 	rom.clear();
-	while (in.read(&byte, 1)) {
+	while (fin.read(&byte, 1)) {
 		rom.push_back(byte);
 	}
+	fin.close();
 }
 
 void z80mmu::outofbios() {
@@ -73,7 +68,7 @@ quint8 z80mmu::readbyte(quint16 address) {
 
 	// VRAM
 	case 0x8000: case 0x9000:
-		return gpu->getvram(address);
+		return vram[address & 0x1FFF];
 
 	// External RAM
 	case 0xA000: case 0xB000:
@@ -95,35 +90,12 @@ quint8 z80mmu::readbyte(quint16 address) {
 
 		// OAM
 		case 0xE00:
-			return ((address & 0xFF) < 0xA0) ? gpu->getoam(address) : 0;
+			return address < 0xFEA0 ? voam[address & 0xFF] : 0;
 
 		// Zeropage RAM, I/O
 		case 0xF00:
-			if (address == 0xFFFF) return interrupt_enabled;
-			else if(address > 0xFF7F) {
-				return zram[address & 0x7F];
-			} else {
-				switch(address & 0xF0) {
-				case 0x00:
-					switch (address & 0xF) {
-					case 0x0:
-						return keypad->readbyte(address);
-					case 0x4:
-					case 0x5:
-					case 0x6:
-					case 0x7:
-						return timer->getbyte(address);
-					case 0xF:
-						getinterrupts();
-						return interrupt_flag;
-					}
-					break;
-				case 0x10: case 0x20: case 0x30:
-					return 0;
-				case 0x40: case 0x50: case 0x60: case 0x70:
-					return gpu->getvreg(address);
-				}
-			}
+			return zram[address & 0xFF];
+
 		}
 	}
 
@@ -153,7 +125,7 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 
 	// VRAM
 	case 0x8000: case 0x9000:
-		gpu->setvram(address, value);
+		vram[address & 0x1FFF] = value;
 		break;
 
 	// External RAM
@@ -179,43 +151,15 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 
 		// OAM
 		case 0xE00:
-			if((address & 0xFF) < 0xA0) gpu->setoam(address, value);
+			if(address < 0xFEA0) voam[address & 0xFF] = value;
 			break;
 
 		// Zeropage RAM, I/O
 		case 0xF00:
-			if (address == 0xFFFF) interrupt_enabled = value;
-			else if (address > 0xFF7F) zram[address & 0x7F] = value;
-			else {
-				switch(address & 0xF0) {
-				case 0x00:
-					switch (address & 0xF) {
-					case 0x0:
-						keypad->writebyte(address, value); break;
-					case 0x4:
-					case 0x5:
-					case 0x6:
-					case 0x7:
-						timer->setbyte(address, value); break;
-					case 0xF:
-						interrupt_flag = value; break;
-					}
-					break;
-				case 0x10: case 0x20: case 0x30:
-					break;
-				case 0x40: case 0x50: case 0x60: case 0x70:
-					if (address == 0xFF46) {
-						// OAM DMA
-						for(quint8 i = 0; i < 0xA0; ++i) {
-							quint16 newaddr = value;
-							gpu->setoam(i, readbyte((newaddr << 8) | i));
-						}
-					}
-					gpu->setvreg(address, value);
-					break;
-				}
-			}
+			zram[address & 0xFF] = value;
+			break;
 		}
+
 		break;
 	}
 }
@@ -223,19 +167,4 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 void z80mmu::writeword(quint16 address, quint16 value) {
 	writebyte(address, value & 0xFF);
 	writebyte(address + 1, value >> 8);
-}
-
-bool z80mmu::readandclearinterrupt(quint8 bit) {
-	getinterrupts();
-	quint8 iflag = interrupt_enabled & interrupt_flag;
-	iflag &= (1 << bit);
-	if (iflag) interrupt_flag &= ~(1 << bit);
-	return (iflag != 0) ? true : false;
-}
-
-void z80mmu::getinterrupts() {
-	interrupt_flag = 0;
-	interrupt_flag |= (0x3 & gpu->getinterrupts());
-	interrupt_flag |= timer->readandclearinterrupt() ? 0x4 : 0;
-	interrupt_flag |= keypad->readandclearinterrupt() ? 0x10 : 0;
 }

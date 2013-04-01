@@ -2,6 +2,7 @@
 #define GBKEYPAD_H
 
 #include "libqboy_global.h"
+#include "z80mmu.h"
 
 enum GBKeypadKey {
 	GBKeypadKey_RIGHT,
@@ -15,16 +16,17 @@ enum GBKeypadKey {
 	GBKeypadKey_NONE
 };
 
+const int _GBKEYPAD_MEMADDR = 0xFF00;
+
 class gbkeypad {
 public:
-	gbkeypad();
+	gbkeypad(z80mmu *mmu);
 	void reset();
 	void keyup(GBKeypadKey key);
 	void keydown(GBKeypadKey key);
-	void writebyte(quint16 address, quint8 value);
-	quint8 readbyte(quint16 address);
-	bool readandclearinterrupt();
+	void step();
 private:
+	z80mmu *mmu;
 	quint8 row0, row1;
 	quint8 column;
 	bool interrupt;

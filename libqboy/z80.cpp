@@ -17,8 +17,11 @@ void z80::cycle() {
 	assert(halted == false); // HALT may or may not function properly
 
 	if(interrupt_enable) {
+		quint8 interrupt_flag = mmu->readbyte(0xFF0F);
+		quint8 interrupt_enabled = mmu->readbyte(0xFFFF);
 		for (int i = 0; i < 5; ++i) {
-			if (mmu->readandclearinterrupt(i)) {
+			if ((interrupt_flag & interrupt_enabled & (1 << i)) != 0) {
+				mmu->writebyte(0xFF0F, interrupt_flag & ~(1 << i));
 				halted = false;
 				op_rst_int(0x0040 | (i << 3));
 				return;

@@ -1,6 +1,7 @@
 #include "gbgpu.h"
 
-gbgpu::gbgpu() {
+gbgpu::gbgpu(z80mmu *mmu) {
+	this->mmu = mmu;
 	reset();
 }
 
@@ -8,27 +9,10 @@ void gbgpu::reset() {
 	mode = 2;
 	modeclock = 0;
 	line = 0;
-	vram.resize(0x2000, 0);
-	vreg.resize(256, 0);
-	oam.resize(160, 0);
-	sprites.resize(_GBGPU_SPRITENUM);
 
 	for (int i = 0; i < 4; ++i) {
 		pallete_bg[i] = pallete_obj0[i] = pallete_obj1[i] = 255;
 	}
-
-	lcd_on = false;
-	bg_on = false, win_on = false;
-	sprite_on = sprite_large = false;
-	xscroll = yscroll = 0;
-	winxpos = winypos = 0;
-	linecmp = 0;
-	tileset1 = false;
-	bg_mapbase = 0x1800;
-	win_mapbase = 0x1800;
-	updated = false;
-
-	int_mode_0 = int_mode_1 = int_mode_2 = int_coincidence = false;
 
 	for (int y = 0; y < _GBGPU_H; ++y) {
 		for (int x = 0; x < _GBGPU_W; ++x) {
@@ -43,6 +27,7 @@ void gbgpu::reset() {
 }
 
 void gbgpu::step(int z80m) {
+	preprocessram();
 	modeclock += z80m;
 	updated = false;
 
@@ -83,156 +68,136 @@ void gbgpu::step(int z80m) {
 		}
 		break;
 	}
+	postprocessram();
 }
 
 quint8 *gbgpu::getLCD() {
 	return &screen_buffer[0][0][0];
 }
 
-void gbgpu::setvram(quint16 address, quint8 val) {
-	vram[address & 0x1FFF] = val;
+bool gbgpu::lcd_on() {
+	return mmu->readbyte(_GBGPU_VREGBASE) & 0x80;
 }
 
-quint8 gbgpu::getvram(quint16 address) {
-	return vram[address & 0x1FFF];
+bool gbgpu::bg_on() {
+	return mmu->readbyte(_GBGPU_VREGBASE) & 0x01;
 }
 
-void gbgpu::setvreg(quint16 address, quint8 val) {
-	address -= 0xFF40;
-	vreg[address] = val;
-	switch(address) {
-	case 0:
-		lcd_on = (val & 0x80);
-		win_mapbase = (val & 0x40) ? 0x1C00 : 0x1800;
-		win_on = (val & 0x20);
-		tileset1 = (val & 0x10);
-		bg_mapbase = (val & 0x08) ? 0x1C00 : 0x1800;
-		sprite_large = (val & 0x04);
-		sprite_on = (val & 0x02);
-		bg_on = (val & 0x01);
-		break;
-	case 1:
-		int_mode_0 = val & 0x08;
-		int_mode_1 = val & 0x10;
-		int_mode_2 = val & 0x20;
-		int_coincidence = val & 0x40;
-		break;
-	case 2:
-		yscroll = val;
-		break;
-	case 3:
-		xscroll = val;
-		break;
-	case 5:
-		linecmp = val;
-		break;
+bool gbgpu::win_on() {
+	return mmu->readbyte(_GBGPU_VREGBASE) & 0x20;
+}
 
-	// OAM DMA
-	case 6:
-		// This is handled by the MMU
-		break;
+quint16 gbgpu::bg_mapbase() {
+	if (mmu->readbyte(_GBGPU_VREGBASE) & 0x08) {
+		return _GBGPU_VRAMBASE + 0x1C00;
+	} else {
+		return _GBGPU_VRAMBASE + 0x1800;
+	}
+}
 
-	// BG palette mapping
-	case 7:
-		for(int i = 0; i < 4; ++i)
-		{
-			switch((val >> (2*i)) & 3)
-			{
+quint16 gbgpu::win_mapbase() {
+	if (mmu->readbyte(_GBGPU_VREGBASE) & 0x40) {
+		return _GBGPU_VRAMBASE + 0x1C00;
+	} else {
+		return _GBGPU_VRAMBASE + 0x1800;
+	}
+}
+
+bool gbgpu::tileset1() {
+	return mmu->readbyte(_GBGPU_VREGBASE) & 0x10;
+}
+
+bool gbgpu::sprite_on() {
+	return mmu->readbyte(_GBGPU_VREGBASE) & 0x02;
+}
+
+quint8 gbgpu::yscroll() {
+	return mmu->readbyte(_GBGPU_VREGBASE + 2);
+}
+
+quint8 gbgpu::xscroll() {
+	return mmu->readbyte(_GBGPU_VREGBASE + 3);
+}
+
+quint8 gbgpu::winypos() {
+	return mmu->readbyte(_GBGPU_VREGBASE + 10);
+}
+
+quint8 gbgpu::winxpos() {
+	return mmu->readbyte(_GBGPU_VREGBASE + 11);
+}
+
+quint8 gbgpu::linecmp() {
+	return mmu->readbyte(_GBGPU_VREGBASE + 5);
+}
+
+void gbgpu::preprocessram() {
+	quint8 oamdma = mmu->readbyte(_GBGPU_VREGBASE + 6);
+	if (oamdma != 0) {
+		quint16 baseaddr = oamdma;
+		baseaddr <<= 8;
+		for(quint8 i = 0; i < 0xA0; ++i) {
+			mmu->writebyte(_GBGPU_VOAMBASE | i, mmu->readbyte(baseaddr | i));
+		}
+		mmu->writebyte(_GBGPU_VREGBASE + 6, 0);
+	}
+
+	quint8 val = mmu->readbyte(_GBGPU_VREGBASE + 7);
+	for(int i = 0; i < 4; ++i) {
+		switch((val >> (2*i)) & 3) {
 			case 0: pallete_bg[i] = 255; break;
 			case 1: pallete_bg[i] = 192; break;
 			case 2: pallete_bg[i] = 96; break;
 			case 3: pallete_bg[i] = 0; break;
-			}
 		}
-		break;
-
-	// OBJ0 palette mapping
-	case 8:
-		for(int i = 0; i < 4; ++i)
-		{
-			switch((val >> (2*i)) & 3)
-			{
-			case 0: pallete_obj0[i] = 255; break;
-			case 1: pallete_obj0[i] = 192; break;
-			case 2: pallete_obj0[i] = 96; break;
-			case 3: pallete_obj0[i] = 0; break;
-			}
+	}
+	val = mmu->readbyte(_GBGPU_VREGBASE + 8);
+	for(int i = 0; i < 4; ++i) {
+		switch((val >> (2*i)) & 3) {
+		case 0: pallete_obj0[i] = 255; break;
+		case 1: pallete_obj0[i] = 192; break;
+		case 2: pallete_obj0[i] = 96; break;
+		case 3: pallete_obj0[i] = 0; break;
 		}
-		break;
-
-	// OBJ1 palette mapping
-	case 9:
-		for (int i = 0; i < 4; ++i)
-		{
-			switch((val >> (2*i)) & 3)
-			{
-			case 0: pallete_obj1[i] = 255; break;
-			case 1: pallete_obj1[i] = 192; break;
-			case 2: pallete_obj1[i] = 96; break;
-			case 3: pallete_obj1[i] = 0; break;
-			}
+	}
+	val = mmu->readbyte(_GBGPU_VREGBASE + 9);
+	for (int i = 0; i < 4; ++i) {
+		switch((val >> (2*i)) & 3) {
+		case 0: pallete_obj1[i] = 255; break;
+		case 1: pallete_obj1[i] = 192; break;
+		case 2: pallete_obj1[i] = 96; break;
+		case 3: pallete_obj1[i] = 0; break;
 		}
-		break;
-	case 10:
-		winypos = val;
-		break;
-	case 11:
-		winxpos = val;
-		break;
 	}
 }
 
-quint8 gbgpu::getvreg(quint16 address) {
-	address -= 0xFF40;
+void gbgpu::postprocessram() {
+	mmu->writebyte(_GBGPU_VREGBASE + 4, line);
 
-	switch(address) {
-	case 0:
-		return (lcd_on ? 0x80 : 0) |
-				(win_mapbase == 0x1C00 ? 0x40 : 0) |
-				(win_on ? 0x20 : 0) |
-				(tileset1 ? 0x10 : 0) |
-				(bg_mapbase == 0x1C00 ? 0x08 : 0) |
-				(sprite_large ? 0x04 : 0) |
-				(sprite_on ? 0x02 : 0) |
-				(bg_on ? 0x01 : 0);
-	case 1:
-		return (int_coincidence ? 0x40 : 0) |
-				(int_mode_2 ? 0x20 : 0) |
-				(int_mode_1 ? 0x10 : 0) |
-				(int_mode_0 ? 0x08 : 0) |
-				(line == linecmp ? 4 : 0)/* |
-				(mode & 0x3)*/;
-	case 2:
-		return yscroll;
-	case 3:
-		return xscroll;
-	case 4:
-		return line;
-	case 5:
-		return linecmp;
-	case 10:
-		return winypos;
-	case 11:
-		return winxpos;
+	quint8 vreg1 = mmu->readbyte(_GBGPU_VREGBASE + 1);
+	vreg1 &= 0xF8;
+	vreg1 |= (line == linecmp() ? 4 : 0);// | mode;
+
+	mmu->writebyte(_GBGPU_VREGBASE + 1, vreg1);
+
+	bool lcdstat = false;
+	if ((vreg1 & 0x40) && line == linecmp()) lcdstat = true;
+	if ((vreg1 & 0x20) && mode == 2) lcdstat = true;
+	if ((vreg1 & 0x10) && mode == 1) lcdstat = true;
+	if ((vreg1 & 0x08) && mode == 0) lcdstat = true;
+
+	if (lcdstat || updated) {
+		quint8 int_flags = mmu->readbyte(0xFF0F);
+		int_flags |= (lcdstat ? 0x2 : 0) | (updated ? 0x1 : 0);
+		mmu->writebyte(0xFF0F, int_flags);
 	}
-
-	return vreg[address];
-}
-
-void gbgpu::setoam(quint16 address, quint8 val) {
-	oam[address & 0xFF] = val;
-	buildsprite((address & 0xFF) / 4);
-}
-
-quint8 gbgpu::getoam(quint16 address) {
-	return address & 0xFF;
 }
 
 void gbgpu::renderscan() {
-	if (!lcd_on) return;
+	if (!lcd_on()) return;
 
-	int winx, winy = line - winypos;
-	int bgx, bgy = yscroll + line;
+	int winx, winy = line - winypos();
+	int bgx, bgy = yscroll() + line;
 	quint16 mapbase;
 	int posx, posy;
 
@@ -240,18 +205,18 @@ void gbgpu::renderscan() {
 		quint8 colour = 0;
 
 		quint16 tileaddress;
-		if (win_on && winypos <= line && x >= winxpos - 7) {
+		if (win_on() && winypos() <= line && x >= winxpos() - 7) {
 			// select tile from window
-			winx = x - (winxpos - 7);
+			winx = x - (winxpos() - 7);
 			posx = winx;
 			posy = winy;
-			mapbase = win_mapbase;
-		} else if (bg_on) {
+			mapbase = win_mapbase();
+		} else if (bg_on()) {
 			// select regular bg tile
-			bgx = xscroll + x;
+			bgx = xscroll() + x;
 			posx = bgx;
 			posy = bgy;
-			mapbase = bg_mapbase;
+			mapbase = bg_mapbase();
 		} else {
 			screen_buffer[line][x][0] = screen_buffer[line][x][1] = screen_buffer[line][x][2] = 255;
 			continue;
@@ -260,18 +225,18 @@ void gbgpu::renderscan() {
 		int tiley = (posy >> 3) & 31;
 		int tilex = (posx >> 3) & 31;
 
-		if (tileset1) {
+		if (tileset1()) {
 			quint8 tilenr;
-			tilenr = vram[mapbase + tiley * 32 + tilex];
-			tileaddress = tilenr * 16;
+			tilenr = mmu->readbyte(mapbase + tiley * 32 + tilex);
+			tileaddress = 0x8000 + tilenr * 16;
 		} else {
 			qint8 tilenr; // signed!
-			tilenr = vram[mapbase + tiley * 32 + tilex];
-			tileaddress = 0x1000 + tilenr * 16;
+			tilenr = mmu->readbyte(mapbase + tiley * 32 + tilex);
+			tileaddress = 0x9000 + tilenr * 16;
 		}
 
-		quint8 byte1 = vram[tileaddress + ((posy & 0x7) * 2)];
-		quint8 byte2 = vram[tileaddress + ((posy & 0x7) * 2) + 1];
+		quint8 byte1 = mmu->readbyte(tileaddress + ((posy & 0x7) * 2));
+		quint8 byte2 = mmu->readbyte(tileaddress + ((posy & 0x7) * 2) + 1);
 
 		quint8 xbit = posx % 8;
 		quint8 colnr = (byte1 & (0x80 >> xbit)) ? 1 : 0;
@@ -281,67 +246,42 @@ void gbgpu::renderscan() {
 		screen_buffer[line][x][0] = screen_buffer[line][x][1] = screen_buffer[line][x][2] = colour;
 	}
 
-	if (sprite_on) {
+	if (sprite_on()) {
 		int spritenum = 0;
-		for (int i = 0; i < _GBGPU_SPRITENUM; ++i) {
-			gbgpu_sprite sprite = sprites[i];
+		for (int i = 0; i < 40; ++i) {
+			quint16 spriteaddr = _GBGPU_VOAMBASE + i*4;
+			int spritey = mmu->readbyte(spriteaddr + 0) - 16;
+			int spritex = mmu->readbyte(spriteaddr + 1) - 8;
+			quint8 spritetile = mmu->readbyte(spriteaddr + 2);
+			quint8 spriteflags = mmu->readbyte(spriteaddr + 3);
 
-			if (line < sprite.y || line >= sprite.y + 8)
+			if (line < spritey || line >= spritey + 8)
 				continue;
 
 			spritenum++;
 			if (spritenum > 10) break;
 
-			int tiley = sprite.yflip
-					? 7 - (line - sprite.y)
-					: line - sprite.y;
+			int tiley = line - spritey;
+			if (spriteflags & 0x40) tiley = 7 - tiley;
 
-			quint16 tileaddress = sprite.tile * 16 + tiley * 2;
-			quint8 byte1 = vram[tileaddress];
-			quint8 byte2 = vram[tileaddress + 1];
+			quint16 tileaddress = 0x8000 + spritetile * 16 + tiley * 2;
+			quint8 byte1 = mmu->readbyte(tileaddress);
+			quint8 byte2 = mmu->readbyte(tileaddress + 1);
 
 			for (int x = 0; x < 8; ++x) {
-				int tilex = sprite.xflip ? 7 - x : x;
-				if (sprite.x + x < 0 || sprite.x + x >= 160) continue;
+				int tilex = x;
+				if (spriteflags & 0x20) tilex = 7 - tilex;
+				if (spritex + x < 0 || spritex + x >= 160) continue;
 
-				int colnr = (byte1 & (0x80 >> tilex)) ? 1 : 0;
-				colnr |= (byte2 & (0x80 >> tilex)) ? 2 : 0;
-				int colour = sprite.pallete1 ? pallete_obj1[colnr] : pallete_obj0[colnr];
+				int colnr = ((byte1 & (0x80 >> tilex)) ? 1 : 0)
+							| ((byte2 & (0x80 >> tilex)) ? 2 : 0);
+				int colour = (spriteflags & 0x10) ? pallete_obj1[colnr] : pallete_obj0[colnr];
 
 				// colnr 0 is always transparant, and only draw on white if belowbg
-				if (colnr == 0 || (sprite.belowbg && screen_buffer[line][sprite.x + x][0] != 255)) continue;
+				if (colnr == 0 || ((spriteflags & 0x80) && screen_buffer[line][spritex + x][0] != 255)) continue;
 
-				screen_buffer[line][sprite.x + x][0] = screen_buffer[line][sprite.x + x][1] = screen_buffer[line][sprite.x + x][2] = colour;
+				screen_buffer[line][spritex + x][0] = screen_buffer[line][spritex + x][1] = screen_buffer[line][spritex + x][2] = colour;
 			}
 		}
 	}
-}
-
-void gbgpu::buildsprite(int num) {
-	quint16 oambase = num * 4;
-
-	sprites[num].y = oam[oambase + 0] - 16;
-	sprites[num].x = oam[oambase + 1] - 8;
-	sprites[num].tile = oam[oambase + 2];
-
-	quint8 flags = oam[oambase + 3];
-	sprites[num].pallete1 = (flags & 0x10) == 0x10;
-	sprites[num].xflip = (flags & 0x20) == 0x20;
-	sprites[num].yflip = (flags & 0x40) == 0x40;
-	sprites[num].belowbg = (flags & 0x80) == 0x80;
-}
-
-int gbgpu::getinterrupts() {
-	int response = 0;
-	response |= updated ? 1 : 0;
-
-	bool lcdstat = false;
-	lcdstat |= (int_coincidence && line == linecmp);
-	lcdstat |= (int_mode_2 && mode == 2);
-	lcdstat |= (int_mode_1 && mode == 1);
-	lcdstat |= (int_mode_0 && mode == 0);
-
-	response |= lcdstat ? 2 : 0;
-
-	return response;
 }
