@@ -6,34 +6,44 @@ z80timer::z80timer(z80mmu *mmu) {
 }
 
 void z80timer::reset() {
-	divider = counter = modulo = control = 0;
-	c_main = c_div = 0;
-	interrupt = false;
+	c_main = 0;
 }
 
 void z80timer::step(int z80m) {
+	bool interrupt = false;
+	quint8 divider, counter, modulo, control;
+
 	divider = mmu->readbyte(0xFF04);
 	counter = mmu->readbyte(0xFF05);
 	modulo = mmu->readbyte(0xFF06);
 	control = mmu->readbyte(0xFF07);
-	while (z80m > 0) {
-		z80m--;
 
+	int step = 0;
+	switch (control & 0x3) {
+	case 0:
+		step = 64; break;
+	case 1:
+		step = 1; break;
+	case 2:
+		step = 4; break;
+	case 3:
+		step = 16; break;
+	}
+	step *= 4;
+
+	for (int i = 0; i < z80m; ++i) {
 		c_main++;
-		if (c_main % 4 == 0) divider++;
-		if (++c_div == 16) {
-			c_div = 0;
+		if (c_main % 16 == 0) {
 			divider++;
 		}
 
-		if (control & 4) {
-			quint8 step = 1 << (2* (control & 3));
-			if (c_main % step == 0) {
-				counter++;
-				if (counter == 0) {
-					counter = modulo;
-					interrupt = true;
-				}
+		if ((control & 0x4) == 0) continue;
+
+		if (c_main % step == 0) {
+			counter++;
+			if (counter == 0) {
+				counter = modulo;
+				interrupt = true;
 			}
 		}
 	}
@@ -41,7 +51,6 @@ void z80timer::step(int z80m) {
 	mmu->writebyte(0xFF04, divider);
 	mmu->writebyte(0xFF05, counter);
 	mmu->writebyte(0xFF06, modulo);
-	mmu->writebyte(0xFF07, control);
 
 	if (interrupt) {
 		mmu->writebyte(0xFF0F, mmu->readbyte(0xFF0F) | 0x4);
@@ -49,11 +58,3 @@ void z80timer::step(int z80m) {
 	interrupt = false;
 }
 
-
-bool z80timer::readandclearinterrupt() {
-	if (interrupt) {
-		interrupt = false;
-		return true;
-	}
-	return false;
-}
