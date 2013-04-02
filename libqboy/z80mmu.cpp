@@ -1,8 +1,10 @@
 #include "z80mmu.h"
 
 #include <fstream>
+#include <iostream>
 
 z80mmu::z80mmu() {
+	mbc = 0;
 	reset();
 }
 
@@ -26,32 +28,44 @@ void z80mmu::reset() {
 	bios = std::vector<quint8>(bios_arr, bios_arr + sizeof(bios_arr));
 	inbios = true;
 
-	rom.clear();
-	eram.resize(0x2000, 0);
 	wram.resize(0x2000, 0);
 	vram.resize(0x2000, 0);
 	voam.resize(0xA0, 0);
 	zram.resize(0x100, 0);
-	rombank = 1;
-	rambank = 0;
-	mbctype = 0;
-	extram_on = false;
-	ram_mode = false;
+	if (mbc != 0) delete mbc;
+	mbc = 0;
 }
+
+#include <cassert>
 
 void z80mmu::load(std::string filename) {
 	char byte;
+	std::vector<quint8> rom;
 	std::ifstream fin(filename.c_str(), std::ios_base::in | std::ios_base::binary);
 
 	if (!fin.is_open()) return;
 
-	rom.clear();
 	while (fin.read(&byte, 1)) {
 		rom.push_back(byte);
 	}
 	fin.close();
 
-	mbctype = readbyte(0x0147);
+	quint8 mbctype = rom[0x0147];
+	switch (mbctype) {
+	case 0x0:
+		mbc = new z80mbc0(rom);
+		break;
+	case 0x1: case 0x2: case 0x3:
+		mbc = new z80mbc1(rom);
+		break;
+	case 0xF: case 0x10: case 0x11: case 0x12: case 0x13:
+		mbc = new z80mbc3(rom);
+		break;
+	default:
+		assert(false && "MBC not supported");
+		mbc = new z80mbc1(rom);
+		break;
+	}
 }
 
 void z80mmu::outofbios() {
@@ -59,7 +73,6 @@ void z80mmu::outofbios() {
 }
 
 quint8 z80mmu::readbyte(quint16 address) {
-	int the_rombank;
 	switch(address & 0xF000) {
 	// ROM bank 0
 	case 0x0000:
@@ -68,12 +81,12 @@ quint8 z80mmu::readbyte(quint16 address) {
 	case 0x1000:
 	case 0x2000:
 	case 0x3000:
-		return rom[address];
-
 	// ROM bank 1
-	case 0x4000: case 0x5000: case 0x6000: case 0x7000:
-		the_rombank = (ram_mode) ? rombank & 0x1F : rombank;
-		return rom[the_rombank * 0x4000 + (address & 0x3FFF)];
+	case 0x4000:
+	case 0x5000:
+	case 0x6000:
+	case 0x7000:
+		return mbc->readROM(address);
 
 	// VRAM
 	case 0x8000: case 0x9000:
@@ -81,7 +94,7 @@ quint8 z80mmu::readbyte(quint16 address) {
 
 	// External RAM
 	case 0xA000: case 0xB000:
-		return extram_on && ram_mode ? eram[rambank * 0x2000 + (address & 0x1FFF)] : 0;
+		return mbc->readRAM(address);
 
 	// Work RAM and echo
 	case 0xC000: case 0xD000: case 0xE000:
@@ -124,33 +137,14 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 	// bios and ROM bank 0
 	case 0x0000:
 	case 0x1000:
-		if (mbctype == 0) return;
-		extram_on = (value == 0x0A);
-		break;
 	case 0x2000:
 	case 0x3000:
-		if (mbctype == 0) return;
-		value &= 0x1F;
-		if (value == 0) value = 1;
-		rombank = (rombank & 0x60) | value;
-		break;
-
 	// ROM bank 1
 	case 0x4000:
 	case 0x5000:
-		if (mbctype == 0) return;
-		value &= 0x03;
-		if (ram_mode) {
-			rambank = value;
-			if (eram.size() < value * 0x2000) eram.resize(0x2000 * value, 0);
-		} else {
-			rombank = (value << 5) | (rombank & 0x1F);
-		}
-		break;
 	case 0x6000:
 	case 0x7000:
-		if (mbctype == 0) return;
-		ram_mode = value & 1;
+		mbc->writeROM(address, value);
 
 	// VRAM
 	case 0x8000: case 0x9000:
@@ -159,7 +153,7 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 
 	// External RAM
 	case 0xA000: case 0xB000:
-		if (extram_on && ram_mode) eram[address & 0x1FFF] = value;
+		mbc->writeRAM(address, value);
 		break;
 
 	// Work RAM and echo

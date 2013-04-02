@@ -2,6 +2,7 @@
 #define MMU_H
 
 #include "libqboy_global.h"
+#include "z80mbc.h"
 
 #include <string>
 #include <vector>
@@ -19,14 +20,8 @@ public:
 
 private:
 	bool inbios;
-
-	int rombank;
-	int rambank;
-	int mbctype;
-	bool extram_on;
-	bool ram_mode;
-
-	std::vector<quint8> bios, rom, eram, wram, vram, voam, zram;
+	z80mbc *mbc;
+	std::vector<quint8> bios, wram, vram, voam, zram;
 };
 
 #endif // MMU_H

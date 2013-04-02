@@ -87,6 +87,10 @@ bool gbgpu::win_on() {
 	return mmu->readbyte(_GBGPU_VREGBASE) & 0x20;
 }
 
+bool gbgpu::sprite_large() {
+	return mmu->readbyte(_GBGPU_VREGBASE) & 0x04;
+}
+
 quint16 gbgpu::bg_mapbase() {
 	if (mmu->readbyte(_GBGPU_VREGBASE) & 0x08) {
 		return _GBGPU_VRAMBASE + 0x1C00;
