@@ -19,6 +19,13 @@ public:
 
 private:
 	bool inbios;
+
+	int rombank;
+	int rambank;
+	int mbctype;
+	bool extram_on;
+	bool ram_mode;
+
 	std::vector<quint8> bios, rom, eram, wram, vram, voam, zram;
 };
 

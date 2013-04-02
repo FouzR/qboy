@@ -32,6 +32,11 @@ void z80mmu::reset() {
 	vram.resize(0x2000, 0);
 	voam.resize(0xA0, 0);
 	zram.resize(0x100, 0);
+	rombank = 1;
+	rambank = 0;
+	mbctype = 0;
+	extram_on = false;
+	ram_mode = false;
 }
 
 void z80mmu::load(std::string filename) {
@@ -45,6 +50,8 @@ void z80mmu::load(std::string filename) {
 		rom.push_back(byte);
 	}
 	fin.close();
+
+	mbctype = readbyte(0x0147);
 }
 
 void z80mmu::outofbios() {
@@ -52,6 +59,7 @@ void z80mmu::outofbios() {
 }
 
 quint8 z80mmu::readbyte(quint16 address) {
+	int the_rombank;
 	switch(address & 0xF000) {
 	// ROM bank 0
 	case 0x0000:
@@ -64,7 +72,8 @@ quint8 z80mmu::readbyte(quint16 address) {
 
 	// ROM bank 1
 	case 0x4000: case 0x5000: case 0x6000: case 0x7000:
-		return rom[address];
+		the_rombank = (ram_mode) ? rombank & 0x1F : rombank;
+		return rom[the_rombank * 0x4000 + (address & 0x3FFF)];
 
 	// VRAM
 	case 0x8000: case 0x9000:
@@ -72,7 +81,7 @@ quint8 z80mmu::readbyte(quint16 address) {
 
 	// External RAM
 	case 0xA000: case 0xB000:
-		return eram[address & 0x1FFF];
+		return extram_on && ram_mode ? eram[rambank * 0x2000 + (address & 0x1FFF)] : 0;
 
 	// Work RAM and echo
 	case 0xC000: case 0xD000: case 0xE000:
@@ -115,13 +124,33 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 	// bios and ROM bank 0
 	case 0x0000:
 	case 0x1000:
+		if (mbctype == 0) return;
+		extram_on = (value == 0x0A);
+		break;
 	case 0x2000:
 	case 0x3000:
+		if (mbctype == 0) return;
+		value &= 0x1F;
+		if (value == 0) value = 1;
+		rombank = (rombank & 0x60) | value;
 		break;
 
 	// ROM bank 1
-	case 0x4000: case 0x5000: case 0x6000: case 0x7000:
+	case 0x4000:
+	case 0x5000:
+		if (mbctype == 0) return;
+		value &= 0x03;
+		if (ram_mode) {
+			rambank = value;
+			if (eram.size() < value * 0x2000) eram.resize(0x2000 * value, 0);
+		} else {
+			rombank = (value << 5) | (rombank & 0x1F);
+		}
 		break;
+	case 0x6000:
+	case 0x7000:
+		if (mbctype == 0) return;
+		ram_mode = value & 1;
 
 	// VRAM
 	case 0x8000: case 0x9000:
@@ -130,7 +159,7 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 
 	// External RAM
 	case 0xA000: case 0xB000:
-		eram[address & 0x1FFF] = value;
+		if (extram_on && ram_mode) eram[address & 0x1FFF] = value;
 		break;
 
 	// Work RAM and echo
