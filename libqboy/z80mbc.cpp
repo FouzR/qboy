@@ -1,5 +1,7 @@
 #include "z80mbc.h"
 
+#include <fstream>
+
 z80mbc0::z80mbc0(const std::vector<quint8> &rom) {
 	this->rom = rom;
 	ram.resize(0x2000);
@@ -13,9 +15,7 @@ quint8 z80mbc0::readRAM(quint16 address) {
 	return ram[address];
 }
 
-void z80mbc0::writeROM(quint16 address, quint8 value) {
-	rom[address] = value;
-}
+void z80mbc0::writeROM(quint16, quint8) {}
 
 void z80mbc0::writeRAM(quint16 address, quint8 value) {
 	ram[address] = value;
@@ -46,7 +46,7 @@ quint8 z80mbc1::readRAM(quint16 address) {
 }
 
 void z80mbc1::writeROM(quint16 address, quint8 value) {
-	switch (address) {
+	switch (address & 0xF000) {
 	case 0x0000:
 	case 0x1000:
 		extram_on = (value == 0x0A);
@@ -102,13 +102,13 @@ quint8 z80mbc3::readRAM(quint16 address) {
 		address &= 0x1FFF;
 		return ram[rambank * 0x2000 | address];
 	} else {
-		// TODO
+		// TODO: RTC
 		return 0;
 	}
 }
 
 void z80mbc3::writeROM(quint16 address, quint8 value) {
-	switch (address) {
+	switch (address & 0xF000) {
 	case 0x0000:
 	case 0x1000:
 		extram_on = (value == 0x0A);
@@ -136,6 +136,26 @@ void z80mbc3::writeRAM(quint16 address, quint8 value) {
 		address &= 0x1FFF;
 		ram[rambank * 0x2000 | address] = value;
 	} else {
-		// TODO
+		// TODO: RTC
 	}
+}
+
+void z80mbc3::save(std::string filename) {
+	std::ofstream fout(filename.c_str(), std::ios_base::out | std::ios_base::binary);
+	for (unsigned i = 0; i < ram.size(); ++i) {
+		fout.write((char*)&ram[i], 1);
+	}
+	fout.close();
+}
+
+void z80mbc3::load(std::string filename) {
+	std::ifstream fin(filename.c_str(), std::ios_base::in | std::ios_base::binary);
+	if (!fin.is_open()) return;
+
+	char byte;
+	ram.clear();
+	while (fin.read(&byte, 1)) {
+		ram.push_back(byte);
+	}
+	fin.close();
 }

@@ -21,12 +21,15 @@ public:
 	int get_elapsed_time();
 	void keyup(GBKeypadKey key);
 	void keydown(GBKeypadKey key);
+	void save();
 private:
 	z80 cpu;
 	z80mmu mmu;
 	z80timer timer;
 	gbgpu gpu;
 	gbkeypad keypad;
+
+	int passed_mtime;
 };
 
 #endif // LIBQBOY_H

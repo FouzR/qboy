@@ -1,7 +1,7 @@
 #include "z80mmu.h"
 
+#include <cassert>
 #include <fstream>
-#include <iostream>
 
 z80mmu::z80mmu() {
 	mbc = 0;
@@ -36,8 +36,6 @@ void z80mmu::reset() {
 	mbc = 0;
 }
 
-#include <cassert>
-
 void z80mmu::load(std::string filename) {
 	char byte;
 	std::vector<quint8> rom;
@@ -49,6 +47,9 @@ void z80mmu::load(std::string filename) {
 		rom.push_back(byte);
 	}
 	fin.close();
+
+	savefilename = filename;
+	savefilename.append(".gbsave");
 
 	quint8 mbctype = rom[0x0147];
 	switch (mbctype) {
@@ -66,6 +67,8 @@ void z80mmu::load(std::string filename) {
 		mbc = new z80mbc1(rom);
 		break;
 	}
+
+	mbc->load(savefilename);
 }
 
 void z80mmu::outofbios() {
@@ -190,4 +193,9 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 void z80mmu::writeword(quint16 address, quint16 value) {
 	writebyte(address, value & 0xFF);
 	writebyte(address + 1, value >> 8);
+}
+
+void z80mmu::save() {
+	if (mbc == 0) return;
+	mbc->save(savefilename);
 }

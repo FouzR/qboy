@@ -3,6 +3,7 @@
 
 #include "libqboy_global.h"
 
+#include <string>
 #include <vector>
 
 class z80mbc {
@@ -11,6 +12,8 @@ public:
 	virtual quint8 readRAM(quint16 address) = 0;
 	virtual void writeROM(quint16 address, quint8 value) = 0;
 	virtual void writeRAM(quint16 address, quint8 value) = 0;
+	virtual void save(std::string) {}
+	virtual void load(std::string) {}
 };
 
 class z80mbc0 : public z80mbc {
@@ -46,6 +49,8 @@ public:
 	quint8 readRAM(quint16 address);
 	void writeROM(quint16 address, quint8 value);
 	void writeRAM(quint16 address, quint8 value);
+	void save(std::string filename);
+	void load(std::string filename);
 protected:
 	std::vector<quint8> rom, ram;
 	int rombank;
