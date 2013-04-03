@@ -10,7 +10,6 @@ void libqboy::reset() {
 	timer.reset();
 	keypad.reset();
 	cpu.reset();
-	passed_mtime = 0;
 }
 
 void libqboy::loadgame(std::string filename) {
@@ -26,12 +25,6 @@ void libqboy::cycle() {
 	gpu.step(cpu.get_m());
 	keypad.step();
 	timer.step(cpu.get_m());
-
-	passed_mtime += cpu.get_m();
-	if (passed_mtime > 2000*1024) {
-		passed_mtime = 0;
-		mmu.save();
-	}
 }
 
 int libqboy::get_elapsed_time() {

@@ -10,6 +10,7 @@
 class z80mmu {
 public:
 	z80mmu();
+	~z80mmu();
 	void reset();
 	void load(std::string filename);
 	void outofbios();
@@ -17,7 +18,6 @@ public:
 	quint16 readword(quint16 address);
 	void writebyte(quint16 address, quint8 value);
 	void writeword(quint16 address, quint16 value);
-	void save();
 
 private:
 	bool inbios;

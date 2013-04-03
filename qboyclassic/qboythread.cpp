@@ -40,7 +40,7 @@ void qboythread::run() {
 	while (dorun) {
 		qboy->cycle();
 		gbtime += qboy->get_elapsed_time();
-		if (gbtime > 10240) {
+		if (gbtime > 40960) {
 			int s = gbtime / 1024 - timer.elapsed();
 			s = qMax(0, s);
 			timer.restart();
