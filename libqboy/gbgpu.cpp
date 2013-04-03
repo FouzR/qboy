@@ -184,7 +184,7 @@ void gbgpu::postprocessram() {
 
 	quint8 vreg1 = mmu->readbyte(_GBGPU_VREGBASE + 1);
 	vreg1 &= 0xF8;
-	vreg1 |= (line == linecmp() ? 4 : 0);// | mode;
+	vreg1 |= (line == linecmp() ? 4 : 0) | (mode & 0x3);
 
 	mmu->writebyte(_GBGPU_VREGBASE + 1, vreg1);
 
