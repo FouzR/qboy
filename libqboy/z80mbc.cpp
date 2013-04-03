@@ -159,3 +159,74 @@ void z80mbc3::load(std::string filename) {
 	}
 	fin.close();
 }
+
+/********************************/
+
+z80mbc5::z80mbc5(const std::vector<quint8> &rom) {
+	this->rom = rom;
+	ram.resize(0x20000);
+	rombank = 1;
+	rambank = 0;
+	extram_on = false;
+}
+
+quint8 z80mbc5::readROM(quint16 address) {
+	if (address < 0x4000) return rom[address];
+	address &= 0x3FFF;
+
+	return rom[rombank * 0x4000 | address];
+}
+
+quint8 z80mbc5::readRAM(quint16 address) {
+	if (!extram_on) return 0;
+
+	address &= 0x1FFF;
+	return ram[rambank * 0x2000 | address];
+}
+
+void z80mbc5::writeROM(quint16 address, quint8 value) {
+	switch (address & 0xF000) {
+	case 0x0000:
+	case 0x1000:
+		extram_on = (value == 0x0A);
+		break;
+	case 0x2000:
+		rombank = (rombank & 0x100) | (value);
+		break;
+	case 0x3000:
+		value &= 0x1;
+		rombank = (rombank & 0xFF) | (((int)value) << 8);
+		break;
+	case 0x4000:
+	case 0x5000:
+		rambank = value & 0x0F;
+		break;
+	}
+}
+
+void z80mbc5::writeRAM(quint16 address, quint8 value) {
+	if (!extram_on) return;
+
+	address &= 0x1FFF;
+	ram[rambank * 0x2000 | address] = value;
+}
+
+void z80mbc5::save(std::string filename) {
+	std::ofstream fout(filename.c_str(), std::ios_base::out | std::ios_base::binary);
+	for (unsigned i = 0; i < ram.size(); ++i) {
+		fout.write((char*)&ram[i], 1);
+	}
+	fout.close();
+}
+
+void z80mbc5::load(std::string filename) {
+	std::ifstream fin(filename.c_str(), std::ios_base::in | std::ios_base::binary);
+	if (!fin.is_open()) return;
+
+	char byte;
+	ram.clear();
+	while (fin.read(&byte, 1)) {
+		ram.push_back(byte);
+	}
+	fin.close();
+}

@@ -66,6 +66,9 @@ void z80mmu::load(std::string filename) {
 	case 0xF: case 0x10: case 0x11: case 0x12: case 0x13:
 		mbc = new z80mbc3(rom);
 		break;
+	case 0x19: case 0x1A: case 0x1B: case 0x1C: case 0x1D: case 0x1E:
+		mbc = new z80mbc5(rom);
+		break;
 	default:
 		assert(false && "MBC not supported");
 		mbc = new z80mbc1(rom);

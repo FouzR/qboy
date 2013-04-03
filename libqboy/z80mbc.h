@@ -58,4 +58,20 @@ protected:
 	bool extram_on;
 };
 
+class z80mbc5 : public z80mbc {
+public:
+	z80mbc5(const std::vector<quint8> &rom);
+	quint8 readROM(quint16 address);
+	quint8 readRAM(quint16 address);
+	void writeROM(quint16 address, quint8 value);
+	void writeRAM(quint16 address, quint8 value);
+	void save(std::string filename);
+	void load(std::string filename);
+protected:
+	std::vector<quint8> rom, ram;
+	int rombank;
+	int rambank;
+	bool extram_on;
+};
+
 #endif // Z80MBC_H

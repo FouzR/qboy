@@ -256,6 +256,7 @@ void gbgpu::renderscan() {
 
 	if (sprite_on()) {
 		int spritenum = 0;
+		int spriteheight = sprite_large() ? 16 : 8;
 		for (int i = 0; i < 40; ++i) {
 			quint16 spriteaddr = _GBGPU_VOAMBASE + i*4;
 			int spritey = mmu->readbyte(spriteaddr + 0) - 16;
@@ -263,14 +264,17 @@ void gbgpu::renderscan() {
 			quint8 spritetile = mmu->readbyte(spriteaddr + 2);
 			quint8 spriteflags = mmu->readbyte(spriteaddr + 3);
 
-			if (line < spritey || line >= spritey + 8)
+			if (line < spritey || line >= spritey + spriteheight)
 				continue;
 
 			spritenum++;
 			if (spritenum > 10) break;
 
 			int tiley = line - spritey;
-			if (spriteflags & 0x40) tiley = 7 - tiley;
+			if (spriteflags & 0x40) tiley = spriteheight - 1 - tiley;
+			if (spriteheight == 16) {
+				spritetile &= 0xFE;
+			}
 
 			quint16 tileaddress = 0x8000 + spritetile * 16 + tiley * 2;
 			quint8 byte1 = mmu->readbyte(tileaddress);

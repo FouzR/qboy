@@ -38,7 +38,7 @@ void QBoyClassic::stopGameBoy() {
 	QImage *labelimage = ui->gblabel->image;
 	ui->gblabel->image = 0;
 	if (labelimage != 0) delete labelimage;
-	if (qboyt != 0) qboyt->deleteLater();
+	if (qboyt != 0) delete qboyt;
 	qboyt = 0;
 }
 
