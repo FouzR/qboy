@@ -18,7 +18,8 @@ public:
 	void togglespeed();
 
 signals:
-	
+	void screen_refresh();
+
 public slots:
 
 private:

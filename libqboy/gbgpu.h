@@ -16,6 +16,7 @@ public:
 	gbgpu(z80mmu *mmu);
 	void reset();
 	void step(int z80m);
+	bool is_updated();
 	quint8 *getLCD();
 private:
 	z80mmu *mmu;

@@ -8,7 +8,6 @@
 
 #include <QLabel>
 #include <QPainter>
-#include <QTimer>
 
 namespace Ui {
 class QBoyClassic;
@@ -31,7 +30,6 @@ private:
 	Ui::QBoyClassic *ui;
 	qboythread *qboyt;
 	QString filename;
-	QTimer *refreshtimer;
 
 	void startGameBoy();
 	void stopGameBoy();

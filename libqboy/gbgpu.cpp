@@ -75,6 +75,10 @@ quint8 *gbgpu::getLCD() {
 	return &screen_buffer[0][0][0];
 }
 
+bool gbgpu::is_updated() {
+	return updated;
+}
+
 bool gbgpu::lcd_on() {
 	return mmu->readbyte(_GBGPU_VREGBASE) & 0x80;
 }

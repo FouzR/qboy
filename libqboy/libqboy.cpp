@@ -39,3 +39,7 @@ void libqboy::keyup(GBKeypadKey key) {
 void libqboy::keydown(GBKeypadKey key) {
 	keypad.keydown(key);
 }
+
+bool libqboy::refresh_screen() {
+	return gpu.is_updated();
+}

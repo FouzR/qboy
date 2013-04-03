@@ -18,6 +18,7 @@ public:
 	quint8 *getLCD();
 	void loadgame(std::string filename);
 	void cycle();
+	bool refresh_screen();
 	int get_elapsed_time();
 	void keyup(GBKeypadKey key);
 	void keydown(GBKeypadKey key);

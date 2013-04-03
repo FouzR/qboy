@@ -10,14 +10,11 @@ QBoyClassic::QBoyClassic(QWidget *parent) :
 
 	ui->setupUi(this);
 
-	refreshtimer = new QTimer();
-	connect(refreshtimer, SIGNAL(timeout()), ui->gblabel, SLOT(repaint()));
 	filename = "tetris.gb";
 	qboyt = 0;
 }
 
 QBoyClassic::~QBoyClassic() {
-	delete refreshtimer;
 	delete qboyt;
 	delete ui;
 }
@@ -32,17 +29,16 @@ void QBoyClassic::startGameBoy() {
 		qboyt = new qboythread(filename);
 		qboyt->start();
 		ui->gblabel->image = new QImage(qboyt->getLCD(), 160, 144, QImage::Format_RGB32);
-		refreshtimer->start(25);
 		ui->btnpause->setText("Pause");
+		connect(qboyt, SIGNAL(screen_refresh()), ui->gblabel, SLOT(repaint()));
 	}
 }
 
 void QBoyClassic::stopGameBoy() {
-	refreshtimer->stop();
 	QImage *labelimage = ui->gblabel->image;
 	ui->gblabel->image = 0;
 	if (labelimage != 0) delete labelimage;
-	if (qboyt != 0) delete qboyt;
+	if (qboyt != 0) qboyt->deleteLater();
 	qboyt = 0;
 }
 
