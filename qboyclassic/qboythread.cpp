@@ -36,17 +36,18 @@ void qboythread::run() {
 	QElapsedTimer timer;
 	timer.start();
 
-	int gbtime = 0;
+	int thirds = 0;
 	while (dorun) {
 		qboy->cycle();
-		if (qboy->refresh_screen()) emit screen_refresh();
-		gbtime += qboy->get_elapsed_time();
-		if (gbtime > 4096) {
-			int s = gbtime / 1024 - timer.elapsed();
-			s = qMax(0, s);
+		if (qboy->refresh_screen()) {
+			emit screen_refresh();
+			int s = timer.elapsed();
+			if (thirds++ == 3) {
+				thirds = 0;
+				s--;
+			}
+			if (16 - s > 0) msleep(16 - s);
 			timer.restart();
-			if (sloweddown) msleep(s);
-			gbtime = 0;
 		}
 	}
 }
