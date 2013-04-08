@@ -43,6 +43,7 @@ void QBoyClassic::stopGameBoy() {
 }
 
 void QBoyClassic::keyPressEvent(QKeyEvent* event) {
+	if (qboyt == 0) return;
 	GBKeypadKey key = qtkeytogb(event->key());
 
 	if (key != GBKeypadKey_NONE) {
@@ -52,6 +53,7 @@ void QBoyClassic::keyPressEvent(QKeyEvent* event) {
 }
 
 void QBoyClassic::keyReleaseEvent(QKeyEvent *event) {
+	if (qboyt == 0) return;
 	GBKeypadKey key = qtkeytogb(event->key());
 
 	if (key != GBKeypadKey_NONE) {
