@@ -155,6 +155,7 @@ void z80mmu::writebyte(quint16 address, quint8 value) {
 	case 0x6000:
 	case 0x7000:
 		mbc->writeROM(address, value);
+		break;
 
 	// VRAM
 	case 0x8000: case 0x9000:

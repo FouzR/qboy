@@ -46,8 +46,8 @@ void qboythread::run() {
 				thirds = 0;
 				s--;
 			}
-			if (sloweddown && 16 - s > 0) msleep(16 - s);
 			timer.restart();
+			if (sloweddown && 16 - s > 0) msleep(16 - s);
 		}
 	}
 }
