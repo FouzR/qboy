@@ -1,6 +1,6 @@
 #include "libqboy.h"
 
-libqboy::libqboy() : cpu(&mmu), gpu(&mmu), keypad(&mmu), timer(&mmu) {
+libqboy::libqboy() : cpu(&mmu), timer(&mmu), gpu(&mmu), keypad(&mmu) {
 	reset();
 }
 

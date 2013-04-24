@@ -1,5 +1,6 @@
 #include "z80mbc.h"
 
+#include <cstring>
 #include <fstream>
 
 z80mbc0::z80mbc0(const std::vector<quint8> &rom) {
@@ -85,7 +86,7 @@ void z80mbc1::writeRAM(quint16 address, quint8 value) {
 z80mbc3::z80mbc3(const std::vector<quint8> &rom) {
 	this->rom = rom;
 
-	int ramsize;
+	int ramsize = 0;
 	switch (rom[0x0149]) {
 	case 0x00:
 		ramsize = 0; break;

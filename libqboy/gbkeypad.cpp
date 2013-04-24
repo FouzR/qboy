@@ -28,6 +28,9 @@ void gbkeypad::keydown(GBKeypadKey key) {
 	case GBKeypadKey_B: row0 &= 0xD; break;
 	case GBKeypadKey_SELECT: row0 &= 0xB; break;
 	case GBKeypadKey_START: row0 &= 0x7; break;
+	case GBKeypadKey_NONE:
+	default:
+		break;
 	}
 	interrupt = true;
 }
@@ -42,6 +45,9 @@ void gbkeypad::keyup(GBKeypadKey key) {
 	case GBKeypadKey_B: row0 |= 0x2; break;
 	case GBKeypadKey_SELECT: row0 |= 0x4; break;
 	case GBKeypadKey_START: row0 |= 0x8; break;
+	case GBKeypadKey_NONE:
+	default:
+		break;
 	}
 }
 

@@ -10,6 +10,7 @@
 
 class z80mbc {
 public:
+	virtual ~z80mbc() {}
 	virtual quint8 readROM(quint16 address) = 0;
 	virtual quint8 readRAM(quint16 address) = 0;
 	virtual void writeROM(quint16 address, quint8 value) = 0;
