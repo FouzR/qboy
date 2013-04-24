@@ -83,8 +83,10 @@ void z80mbc1::writeRAM(quint16 address, quint8 value) {
 /********************************/
 
 z80mbc3::z80mbc3(const std::vector<quint8> &rom) {
+	rtczero = time(NULL);
 	this->rom = rom;
 	ram.resize(0x10000);
+	rtc.resize(5);
 	rombank = 1;
 	rambank = 0;
 	extram_on = false;
@@ -102,7 +104,8 @@ quint8 z80mbc3::readRAM(quint16 address) {
 		address &= 0x1FFF;
 		return ram[rambank * 0x2000 | address];
 	} else {
-		// TODO: RTC
+		calc_rtcregs();
+		return rtc[rambank - 0x08];
 		return 0;
 	}
 }
@@ -136,12 +139,14 @@ void z80mbc3::writeRAM(quint16 address, quint8 value) {
 		address &= 0x1FFF;
 		ram[rambank * 0x2000 | address] = value;
 	} else {
-		// TODO: RTC
+		rtc[rambank - 0x8] = value;
+		calc_rtczero();
 	}
 }
 
 void z80mbc3::save(std::string filename) {
 	std::ofstream fout(filename.c_str(), std::ios_base::out | std::ios_base::binary);
+	fout.write(reinterpret_cast<const char *>(&rtczero), sizeof(rtczero));
 	for (unsigned i = 0; i < ram.size(); ++i) {
 		fout.write((char*)&ram[i], 1);
 	}
@@ -154,10 +159,38 @@ void z80mbc3::load(std::string filename) {
 
 	char byte;
 	ram.clear();
+
+	fin.read(reinterpret_cast<char *>(&rtczero), sizeof(rtczero));
 	while (fin.read(&byte, 1)) {
 		ram.push_back(byte);
 	}
 	fin.close();
+}
+
+void z80mbc3::calc_rtczero() {
+	time_t difftime = time(NULL);
+	long long days;
+	difftime -= rtc[0];
+	difftime -= rtc[1] * 60;
+	difftime -= rtc[2] * 3600;
+	days = rtc[4] & 0x1;
+	days = days << 8 | rtc[3];
+	difftime -= days * 3600 * 24;
+	rtczero = difftime;
+}
+
+void z80mbc3::calc_rtcregs() {
+	time_t difftime = time(NULL) - rtczero;
+	rtc[0] = difftime % 60;
+	rtc[1] = (difftime / 60) % 60;
+	rtc[2] = (difftime / 3600) % 24;
+	long long days = (difftime / (3600*24));
+	rtc[3] = days & 0xFF;
+	rtc[4] = (rtc[4] & 0xFE) | ((days >> 8) & 0x1);
+}
+
+void z80mbc3::calc_halttime() {
+
 }
 
 /********************************/

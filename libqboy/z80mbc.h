@@ -5,6 +5,8 @@
 
 #include <string>
 #include <vector>
+#include <ctime>
+
 
 class z80mbc {
 public:
@@ -52,10 +54,15 @@ public:
 	void save(std::string filename);
 	void load(std::string filename);
 protected:
-	std::vector<quint8> rom, ram;
+	std::vector<quint8> rom, ram, rtc;
 	int rombank;
 	int rambank;
 	bool extram_on;
+	time_t rtczero, halttime;
+
+	void calc_rtczero();
+	void calc_rtcregs();
+	void calc_halttime();
 };
 
 class z80mbc5 : public z80mbc {
