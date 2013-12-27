@@ -25,8 +25,10 @@ void gbgpu::reset() {
 
 void gbgpu::step(int z80m) {
 	preprocessram();
-	modeclock += z80m;
-	updated = false;
+
+    updated = false;
+    if (!lcd_on()) return;
+    modeclock += z80m;
 
 	switch (mode) {
 	case 2:
