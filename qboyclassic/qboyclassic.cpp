@@ -86,7 +86,7 @@ GBKeypadKey QBoyClassic::qtkeytogb(int qtkey) {
 }
 
 void QBoyClassic::on_btnload_clicked() {
-	filename = QFileDialog::getOpenFileName(this, "Open Gameboy file", QString(), "*.gb");
+    filename = QFileDialog::getOpenFileName(this, "Open Gameboy file", QString(), "Gameboy (*.gb)");
 	if (filename != "") {
 		ui->btnrestart->setEnabled(true);
 		startGameBoy();
