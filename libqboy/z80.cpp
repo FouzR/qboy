@@ -15,13 +15,13 @@ void z80::cycle() {
 	quint8 opcode = 0;
 
 	if(interrupt_enable || halted) {
-		quint8 interrupt_flag = mmu->readbyte(0xFF0F);
+        quint8 interrupt_occured = mmu->readbyte(0xFF0F);
 		quint8 interrupt_enabled = mmu->readbyte(0xFFFF);
-		for (int i = 0; i < 5; ++i) {
-			if ((interrupt_flag & interrupt_enabled & (1 << i)) != 0) {
+        for (unsigned int i = 0; i < 5; ++i) {
+            if ((interrupt_occured & interrupt_enabled & (1u << i)) != 0) {
 				halted = false;
 				if (interrupt_enable) {
-					mmu->writebyte(0xFF0F, interrupt_flag & ~(1 << i));
+                    mmu->writebyte(0xFF0F, interrupt_occured & ~(1u << i));
 					op_rst_int(0x0040 | (i << 3));
 					return;
 				}
