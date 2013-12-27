@@ -17,10 +17,7 @@ void gbgpu::reset() {
 	for (int y = 0; y < _GBGPU_H; ++y) {
 		for (int x = 0; x < _GBGPU_W; ++x) {
 			for (int c = 0; c < 4; ++c) {
-				screen_buffer[y][x][0] = 255;
-				screen_buffer[y][x][1] = 255;
-				screen_buffer[y][x][2] = 255;
-				screen_buffer[y][x][3] = 255;
+                screen_buffer[y][x][c] = 255;
 			}
 		}
 	}
@@ -145,18 +142,18 @@ void gbgpu::preprocessram() {
 		quint16 baseaddr = oamdma;
 		baseaddr <<= 8;
 		for(quint8 i = 0; i < 0xA0; ++i) {
-			mmu->writebyte(_GBGPU_VOAMBASE | i, mmu->readbyte(baseaddr | i));
+            mmu->writebyte(_GBGPU_VOAMBASE + i, mmu->readbyte(baseaddr + i));
 		}
 		mmu->writebyte(_GBGPU_VREGBASE + 6, 0);
 	}
 
 	quint8 val = mmu->readbyte(_GBGPU_VREGBASE + 7);
 	for(int i = 0; i < 4; ++i) {
-		switch((val >> (2*i)) & 3) {
+        switch((val >> (2*i)) & 3) {
 			case 0: pallete_bg[i] = 255; break;
 			case 1: pallete_bg[i] = 192; break;
 			case 2: pallete_bg[i] = 96; break;
-			case 3: pallete_bg[i] = 0; break;
+            case 3: pallete_bg[i] = 0; break;
 		}
 	}
 	val = mmu->readbyte(_GBGPU_VREGBASE + 8);
@@ -196,7 +193,7 @@ void gbgpu::postprocessram() {
 
 	if (lcdstat || updated) {
 		quint8 int_flags = mmu->readbyte(0xFF0F);
-		int_flags |= (lcdstat ? 0x2 : 0) | (updated ? 0x1 : 0);
+        int_flags |= (lcdstat ? 0x2 : 0) | (updated ? 0x1 : 0);
 		mmu->writebyte(0xFF0F, int_flags);
 	}
 }
