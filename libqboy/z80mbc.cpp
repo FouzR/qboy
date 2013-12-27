@@ -103,23 +103,22 @@ z80mbc3::z80mbc3(const std::vector<quint8> &rom) {
 	rombank = 1;
 	rambank = 0;
 	extram_on = false;
+    rtc_lock = false;
 }
 
 quint8 z80mbc3::readROM(quint16 address) {
 	if (address < 0x4000) return rom[address];
-	address &= 0x3FFF;
-	return rom[rombank * 0x4000 | address];
+    address &= 0x3FFF;
+    return rom[rombank * 0x4000 + (int)address];
 }
 
 quint8 z80mbc3::readRAM(quint16 address) {
-	if (!extram_on) return 0;
+    if (extram_on == false) return 0;
 	if (rambank <= 3) {
-		address &= 0x1FFF;
-		return ram[rambank * 0x2000 | address];
+        address &= 0x1FFF;
+        return ram[rambank * 0x2000 + (int)address];
 	} else {
-		calc_rtcregs();
-		return rtc[rambank - 0x08];
-		return 0;
+        return rtc[rambank - 0x08];
 	}
 }
 
@@ -132,7 +131,7 @@ void z80mbc3::writeROM(quint16 address, quint8 value) {
 	case 0x2000:
 	case 0x3000:
 		value &= 0x7F;
-		rombank = (value == 0) ? 1 : value;
+        rombank = (value == 0x00) ? 0x01 : value;
 		break;
 	case 0x4000:
 	case 0x5000:
@@ -140,19 +139,27 @@ void z80mbc3::writeROM(quint16 address, quint8 value) {
 		break;
 	case 0x6000:
 	case 0x7000:
-		// TODO: Lock RTC...
+        switch (value) {
+        case 0x00:
+            rtc_lock = false;
+            break;
+        case 0x01:
+            if (rtc_lock == false) calc_rtcregs();
+            rtc_lock = true;
+            break;
+        }
 		break;
 	}
 }
 
 void z80mbc3::writeRAM(quint16 address, quint8 value) {
-	if (!extram_on) return;
+    if (extram_on == false) return;
 
 	if (rambank <= 3) {
-		address &= 0x1FFF;
-		ram[rambank * 0x2000 | address] = value;
+        address &= 0x1FFF;
+        ram[rambank * 0x2000 + (int)address] = value;
 	} else {
-		rtc[rambank - 0x8] = value;
+        rtc[rambank - 0x8] = value;
 		calc_rtczero();
 	}
 }
@@ -240,10 +247,6 @@ void z80mbc3::calc_rtcregs() {
 		rtc[4] |= 0x80;
 		calc_rtczero();
 	}
-}
-
-void z80mbc3::calc_halttime() {
-
 }
 
 /********************************/
