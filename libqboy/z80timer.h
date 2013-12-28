@@ -11,8 +11,8 @@ public:
 	void step(int z80m);
 private:
 	z80mmu *mmu;
-    int internal_counter;
-    static const int divider_step = 64;
+	int internal_counter;
+	static const int divider_step = 64;
 };
 
 #endif // Z80TIMER_H

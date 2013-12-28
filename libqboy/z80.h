@@ -17,9 +17,9 @@ public:
 	void reset();
 	void cycle();
 	int get_m();
+	bool is_halted();
 private:
-	int clock_m;
-	int last_m;
+	unsigned int last_m;
 	bool interrupt_enable;
 
 	z80mmu *mmu;

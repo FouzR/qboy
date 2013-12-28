@@ -15,13 +15,13 @@ void z80::cycle() {
 	quint8 opcode = 0;
 
 	if(interrupt_enable || halted) {
-        quint8 interrupt_occured = mmu->readbyte(0xFF0F);
+		quint8 interrupt_occured = mmu->readbyte(0xFF0F);
 		quint8 interrupt_enabled = mmu->readbyte(0xFFFF);
-        for (unsigned int i = 0; i < 5; ++i) {
-            if ((interrupt_occured & interrupt_enabled & (1u << i)) != 0) {
+		for (unsigned int i = 0; i < 5; ++i) {
+			if ((interrupt_occured & interrupt_enabled & (1u << i)) != 0) {
 				halted = false;
 				if (interrupt_enable) {
-                    mmu->writebyte(0xFF0F, interrupt_occured & ~(1u << i));
+					mmu->writebyte(0xFF0F, interrupt_occured & ~(1u << i));
 					op_rst_int(0x0040 | (i << 3));
 					return;
 				}
@@ -45,7 +45,6 @@ void z80::cycle() {
 }
 
 void z80::reset() {
-	clock_m = 0;
 	last_m = 0;
 	halted = false;
 	assfailed = false;
@@ -64,6 +63,10 @@ void z80::reset() {
 
 int z80::get_m() {
 	return last_m;
+}
+
+bool z80::is_halted() {
+	return halted;
 }
 
 quint8 z80::getbyteregisterval(int code) {
@@ -140,7 +143,6 @@ quint16 z80::popstack() {
 void z80::addticks(int m) {
 	assert(last_m == 0);
 	last_m += m;
-	clock_m += m;
 }
 
 bool z80::jumpcond(int arg) {
@@ -564,7 +566,9 @@ void z80::op_scf() {
 }
 
 void z80::op_halt() {
-	halted = true;
+	if (interrupt_enable == true) {
+		halted = true;
+	}
 	addticks(1);
 }
 
@@ -717,7 +721,7 @@ void z80::op_srl(int arg) {
 
 void z80::op_bit(quint8 bit, int arg) {
 	quint8 ans;
-	quint8 test = 1 << bit;
+	quint8 test = 1u << bit;
 
 	if (arg == 6) {
 		quint16 addr = hl.getfull();
