@@ -12,7 +12,7 @@ public:
 private:
 	z80mmu *mmu;
     int internal_counter;
-    const int divider_step = 64;
+    static const int divider_step = 64;
 };
 
 #endif // Z80TIMER_H
