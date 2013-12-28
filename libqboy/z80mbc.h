@@ -58,12 +58,12 @@ protected:
 	std::vector<quint8> rom, ram, rtc;
 	int rombank;
 	int rambank;
-    bool extram_on;
-    bool rtc_lock;
-    time_t rtczero;
+	bool extram_on;
+	bool rtc_lock;
+	time_t rtczero;
 
 	void calc_rtczero();
-    void calc_rtcregs();
+	void calc_rtcregs();
 };
 
 class z80mbc5 : public z80mbc {
