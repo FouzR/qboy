@@ -17,7 +17,7 @@ void gbgpu::reset() {
 	for (int y = 0; y < _GBGPU_H; ++y) {
 		for (int x = 0; x < _GBGPU_W; ++x) {
 			for (int c = 0; c < 4; ++c) {
-                screen_buffer[y][x][c] = 255;
+				screen_buffer[y][x][c] = 255;
 			}
 		}
 	}
@@ -26,29 +26,29 @@ void gbgpu::reset() {
 void gbgpu::step(int z80m) {
 	preprocessram();
 
-    updated = false;
-    if (!lcd_on()) return;
-    modeclock += z80m;
+	updated = false;
+	if (!lcd_on()) return;
+	modeclock += z80m;
 
 	switch (mode) {
 	case 2:
 		if (modeclock >= 20) {
-			modeclock = 0;
+			modeclock -= 20;
 			mode = 3;
 		}
 		break;
 	case 3:
 		if (modeclock >= 43) {
-			modeclock = 0;
+			modeclock -= 43;
 			mode = 0;
 			renderscan();
 		}
 		break;
 	case 0:
 		if (modeclock >= 51) {
-			modeclock = 0;
+			modeclock -= 51;
 			++line;
-			if (line == 144) {
+			if (line >= 144) {
 				mode = 1;
 				updated = true;
 			} else {
@@ -58,7 +58,7 @@ void gbgpu::step(int z80m) {
 		break;
 	case 1:
 		if (modeclock >= 114) {
-			modeclock = 0;
+			modeclock -= 114;
 			++line;
 			if (line > 153) {
 				mode = 2;
@@ -144,18 +144,18 @@ void gbgpu::preprocessram() {
 		quint16 baseaddr = oamdma;
 		baseaddr <<= 8;
 		for(quint8 i = 0; i < 0xA0; ++i) {
-            mmu->writebyte(_GBGPU_VOAMBASE + i, mmu->readbyte(baseaddr + i));
+			mmu->writebyte(_GBGPU_VOAMBASE + i, mmu->readbyte(baseaddr + i));
 		}
 		mmu->writebyte(_GBGPU_VREGBASE + 6, 0);
 	}
 
 	quint8 val = mmu->readbyte(_GBGPU_VREGBASE + 7);
 	for(int i = 0; i < 4; ++i) {
-        switch((val >> (2*i)) & 3) {
-			case 0: pallete_bg[i] = 255; break;
-			case 1: pallete_bg[i] = 192; break;
-			case 2: pallete_bg[i] = 96; break;
-            case 3: pallete_bg[i] = 0; break;
+		switch((val >> (2*i)) & 3) {
+		case 0: pallete_bg[i] = 255; break;
+		case 1: pallete_bg[i] = 192; break;
+		case 2: pallete_bg[i] = 96; break;
+		case 3: pallete_bg[i] = 0; break;
 		}
 	}
 	val = mmu->readbyte(_GBGPU_VREGBASE + 8);
@@ -195,14 +195,12 @@ void gbgpu::postprocessram() {
 
 	if (lcdstat || updated) {
 		quint8 int_flags = mmu->readbyte(0xFF0F);
-        int_flags |= (lcdstat ? 0x2 : 0) | (updated ? 0x1 : 0);
+		int_flags |= (lcdstat ? 0x2 : 0) | (updated ? 0x1 : 0);
 		mmu->writebyte(0xFF0F, int_flags);
 	}
 }
 
 void gbgpu::renderscan() {
-	if (!lcd_on()) return;
-
 	int winx, winy = line - winypos();
 	int bgx, bgy = yscroll() + line;
 	quint16 mapbase;
@@ -285,7 +283,7 @@ void gbgpu::renderscan() {
 				if (spritex + x < 0 || spritex + x >= 160) continue;
 
 				int colnr = ((byte1 & (0x80 >> tilex)) ? 1 : 0)
-							| ((byte2 & (0x80 >> tilex)) ? 2 : 0);
+						| ((byte2 & (0x80 >> tilex)) ? 2 : 0);
 				int colour = (spriteflags & 0x10) ? pallete_obj1[colnr] : pallete_obj0[colnr];
 
 				// colnr 0 is always transparant, and only draw on white if belowbg
