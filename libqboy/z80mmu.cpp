@@ -67,7 +67,6 @@ void z80mmu::load(std::string filename) {
 		break;
 	default:
 		assert(false && "MBC not supported");
-		mbc = new z80mbc1(rom);
 		break;
 	}
 

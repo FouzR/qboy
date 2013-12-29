@@ -30,13 +30,11 @@ void z80timer::step(int z80m) {
 		step = 64; break;
 	}
 
-	while (internal_counter > step * divider_step) {
-		internal_counter -= step * divider_step;
-	}
+	internal_counter %= 256;
 
 	for (int i = 0; i < z80m; ++i) {
 		internal_counter++;
-		if (internal_counter % divider_step == 0) {
+		if (internal_counter % _Z80TIMER_DIVIDER_STEP == 0) {
 			divider++;
 		}
 

@@ -4,6 +4,8 @@
 #include "libqboy_global.h"
 #include "z80mmu.h"
 
+const int _Z80TIMER_DIVIDER_STEP = 64;
+
 class z80timer {
 public:
 	z80timer(z80mmu *mmu);
@@ -12,7 +14,6 @@ public:
 private:
 	z80mmu *mmu;
 	int internal_counter;
-	static const int divider_step = 64;
 };
 
 #endif // Z80TIMER_H
