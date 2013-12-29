@@ -13,20 +13,7 @@ void z80::cycle() {
 	quint16 progcount = 0;
 	quint8 opcode = 0;
 
-	if(interrupt_enable || halted) {
-		quint8 interrupt_occured = mmu->readbyte(0xFF0F);
-		quint8 interrupt_enabled = mmu->readbyte(0xFFFF);
-		for (unsigned int i = 0; i < 5; ++i) {
-			if ((interrupt_occured & interrupt_enabled & (1u << i)) != 0) {
-				halted = false;
-				if (interrupt_enable) {
-					mmu->writebyte(0xFF0F, interrupt_occured & ~(1u << i));
-					op_rst_int(0x0040 | (i << 3));
-					return;
-				}
-			}
-		}
-	}
+	if (handle_interrupt()) return;
 
 	if (halted) {
 		op_nop();
@@ -70,6 +57,27 @@ int z80::get_m() {
 
 bool z80::is_halted() {
 	return halted;
+}
+
+bool z80::handle_interrupt() {
+	if (interrupt_enable == false && halted == false) return false;
+
+	quint8 interrupt_occured = mmu->readbyte(0xFF0F);
+	quint8 interrupt_enabled = mmu->readbyte(0xFFFF);
+
+	for (unsigned int i = 0; i < 5; ++i) {
+		if ((interrupt_occured & interrupt_enabled & (1u << i)) != 0) {
+			halted = false;
+			if (interrupt_enable) {
+				mmu->writebyte(0xFF0F, interrupt_occured & ~(1u << i));
+				op_rst_int(0x0040 | (i << 3));
+				return true;
+			}
+			return false;
+		}
+	}
+
+	return false;
 }
 
 quint8 z80::getbyteregisterval(int code) {

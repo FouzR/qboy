@@ -27,6 +27,7 @@ private:
 	z80register af, bc, de, hl, sp, pc;
 	bool halted;
 
+	bool handle_interrupt();
 	quint8 getbytearg();
 	quint16 getwordarg();
 	quint8 getbyteregisterval(int code);
