@@ -10,17 +10,12 @@ z80::z80(z80mmu *mmu) {
 void z80::cycle() {
 	last_m = 0;
 
-	quint16 progcount = 0;
-	quint8 opcode = 0;
-
 	if (handle_interrupt()) return;
 
 	if (halted) {
 		op_nop();
 	} else {
-		progcount = pc.getfull();
-		opcode = getbytearg();
-		call(opcode);
+		call(getbytearg());
 	}
 
 	if (last_m == 0) {
