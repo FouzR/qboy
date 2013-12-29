@@ -40,13 +40,13 @@ void qboythread::run() {
 	while (dorun) {
 		qboy->cycle();
 		if (qboy->refresh_screen()) {
-			emit screen_refresh();
 			int s = timer.elapsed();
+			timer.restart();
+			emit screen_refresh();
 			if (thirds++ == 3) {
 				thirds = 0;
 				s--;
 			}
-			timer.restart();
 			if (sloweddown && 16 - s > 0) msleep(16 - s);
 		}
 	}
