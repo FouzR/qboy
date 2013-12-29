@@ -6,7 +6,7 @@
 
 QT       -= gui
 
-TARGET = libqboy
+TARGET = qboy
 TEMPLATE = lib
 
 DEFINES += LIBQBOY_LIBRARY

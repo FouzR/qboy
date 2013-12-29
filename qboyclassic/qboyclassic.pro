@@ -21,9 +21,9 @@ HEADERS  += qboyclassic.h \
 
 FORMS    += qboyclassic.ui
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libqboy/release/ -llibqboy
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../libqboy/debug/ -llibqboy
-else:unix: LIBS += -L$$OUT_PWD/../libqboy/ -llibqboy
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../libqboy/release/ -lqboy
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../libqboy/debug/ -lqboy
+else:unix: LIBS += -L$$OUT_PWD/../libqboy/ -lqboy
 
 INCLUDEPATH += $$PWD/../libqboy
 DEPENDPATH += $$PWD/../libqboy
