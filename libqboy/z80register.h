@@ -20,8 +20,14 @@ public:
 	void operator+=(qint16 val);
 	void operator-=(qint16 val);
 private:
-	quint8 hi, lo;
-	bool isaf;
+	union {
+		struct part_s {
+			quint8 lo;
+			quint8 hi;
+		} part;
+		quint16 full;
+	} data;
+	int lomask;
 	int getflagmask(char type);
 };
 

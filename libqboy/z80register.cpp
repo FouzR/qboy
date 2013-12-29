@@ -1,76 +1,70 @@
 #include "z80register.h"
 
 z80register::z80register() {
-	isaf = false;
 	reset();
 }
 
 void z80register::setaf() {
-	isaf = true;
+	lomask = 0xF0;
 }
 
 void z80register::reset() {
-	hi = 0;
-	lo = 0;
+	data.full = 0;
+	lomask = 0xFF;
 }
 
 void z80register::setfull(quint16 val) {
-	lo = val & 0xFF;
-	hi = val >> 8;
-	if (isaf) lo &= 0xF0;
+	data.full = val;
+	data.part.lo &= lomask;
 }
 
 void z80register::setlo(quint8 val) {
-	lo = val;
-	if (isaf) lo &= 0xF0;
+	data.part.lo = val;
+	data.part.lo &= lomask;
 }
 
 void z80register::sethi(quint8 val) {
-	hi = val;
+	data.part.hi = val;
 }
 
 quint16 z80register::getfull() {
-	quint16 retval = hi;
-	retval <<= 8;
-	retval |= lo;
-	return retval;
+	return data.full;
 }
 
 quint8 z80register::getlo() {
-	return lo;
+	return data.part.lo;
 }
 
 quint8 z80register::gethi() {
-	return hi;
+	return data.part.hi;
 }
 
 bool z80register::getflag(char type) {
 	int bit = getflagmask(type);
-	return lo & bit;
+	return data.part.lo & bit;
 }
 
 void z80register::setflag(char type, bool val) {
 	int bit = getflagmask(type);
-	if (val) lo |= bit;
-	else lo &= ~bit;
+	if (val) data.part.lo |= bit;
+	else data.part.lo &= ~bit;
 }
 
 void z80register::operator+=(qint16 val) {
-	setfull(getfull() + val);
+	data.full += val;
 }
 
 void z80register::operator-=(qint16 val) {
-	setfull(getfull() - val);
+	data.full -= val;
 }
 
 int z80register::getflagmask(char type) {
-	int bit = 7;
 	switch (type) {
-	case 'c': bit = 4; break;
-	case 'h': bit = 5; break;
-	case 'n': bit = 6; break;
-	case 'z': bit = 7; break;
+	case 'c': return (1 << 4);
+	case 'h': return (1 << 5);
+	case 'n': return (1 << 6);
+	case 'z': return (1 << 7);
+	default: return 0;
 	}
-	return (1 << bit);
 }
 
