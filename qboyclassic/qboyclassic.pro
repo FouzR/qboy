@@ -27,3 +27,9 @@ else:unix: LIBS += -L$$OUT_PWD/../libqboy/ -lqboy
 
 INCLUDEPATH += $$PWD/../libqboy
 DEPENDPATH += $$PWD/../libqboy
+
+unix {
+	target.path = /usr/bin
+	INSTALLS += target
+}
+
