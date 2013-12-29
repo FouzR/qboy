@@ -9,7 +9,19 @@ const int _GBGPU_W = 160;
 const int _GBGPU_H = 144;
 const int _GBGPU_VRAMBASE = 0x8000;
 const int _GBGPU_VREGBASE = 0xFF40;
+const int _GBGPU_VREGSIZE = 0xC;
 const int _GBGPU_VOAMBASE = 0xFE00;
+
+union gbgpu_oamflags {
+	struct {
+		quint8 reserved : 4;
+		bool pal1 : 1;
+		bool xflip : 1;
+		bool yflip : 1;
+		bool belowbg : 1;
+	} flags;
+	quint8 byte;
+};
 
 class gbgpu {
 public:
@@ -25,11 +37,12 @@ private:
 	int mode;
 	int modeclock;
 	int line;
+	bool scanlinetransfered;
 
 	bool updated;
 
 	quint8 pallete_bg[4], pallete_obj0[4], pallete_obj1[4];
-	quint8 lastdma;
+	std::vector<quint8> registers;
 
 	bool lcd_on();
 	bool bg_on();
@@ -47,9 +60,14 @@ private:
 
 
 	void renderscan();
+	void drawbackground();
+	void drawwindow();
+	void drawsprites();
 	void updatebuffer();
 	void preprocessram();
 	void postprocessram();
+	void setcolour(int x, quint8 value);
+	quint8 getcolour(int x);
 };
 
 #endif // GBGPU_H
