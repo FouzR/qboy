@@ -26,7 +26,6 @@ private:
 	z80alu alu;
 	z80register af, bc, de, hl, sp, pc;
 	bool halted;
-	bool assfailed;
 
 	quint8 getbytearg();
 	quint16 getwordarg();

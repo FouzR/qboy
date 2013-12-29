@@ -36,15 +36,14 @@ void z80::cycle() {
 		call(opcode);
 	}
 
-	if (last_m == 0 || assfailed) {
-		assert(false && "Opcode failed!");
+	if (last_m == 0) {
+		assert(false && "No clock cycles used this cycle.");
 	}
 }
 
 void z80::reset() {
 	last_m = 0;
 	halted = false;
-	assfailed = false;
 	interrupt_enable = true;
 
 	af.reset();
@@ -159,7 +158,7 @@ bool z80::jumpcond(int arg) {
 		return af.getflag('c');
 	}
 
-	assfailed = true;
+	assert(false && "Errornous jump condition");
 
 	return false;
 }
