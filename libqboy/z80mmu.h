@@ -13,16 +13,14 @@ public:
 	~z80mmu();
 	void reset();
 	void load(std::string filename);
-	void outofbios();
 	quint8 readbyte(quint16 address);
 	quint16 readword(quint16 address);
 	void writebyte(quint16 address, quint8 value);
 	void writeword(quint16 address, quint16 value);
 
 private:
-	bool inbios;
 	z80mbc *mbc;
-	std::vector<quint8> bios, wram, vram, voam, zram;
+	std::vector<quint8> wram, vram, voam, zram;
 	std::string savefilename;
 };
 

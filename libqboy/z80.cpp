@@ -1,7 +1,6 @@
 #include "z80.h"
 
 #include <cassert>
-#include <iostream>
 
 z80::z80(z80mmu *mmu) {
 	this->mmu = mmu;
@@ -32,15 +31,13 @@ void z80::cycle() {
 	if (halted) {
 		op_nop();
 	} else {
-		if (pc.getfull() == 0x0100) mmu->outofbios();
 		progcount = pc.getfull();
 		opcode = getbytearg();
 		call(opcode);
 	}
 
 	if (last_m == 0 || assfailed) {
-		std::cerr << "PC: " << std::hex << progcount << ", opcode: " << (int)opcode << std::endl;
-		assert(false && "Opcode failed!!");
+		assert(false && "Opcode failed!");
 	}
 }
 
@@ -59,6 +56,13 @@ void z80::reset() {
 	sp.reset();
 
 	alu.setregisters(&af, &hl);
+
+	af.setfull(0x01B0);
+	bc.setfull(0x0013);
+	de.setfull(0x00D8);
+	hl.setfull(0x014D);
+	sp.setfull(0xFFFE);
+	pc.setfull(0x0100);
 }
 
 int z80::get_m() {
@@ -129,14 +133,12 @@ quint16 z80::getwordarg() {
 
 void z80::pushstack(quint16 val) {
 	sp -= 2;
-	assert(sp.getfull() != 0 && "pushstack");
 	mmu->writeword(sp.getfull(), val);
 }
 
 quint16 z80::popstack() {
 	quint16 ret = mmu->readword(sp.getfull());
 	sp += 2;
-	assert(sp.getfull() != 0 && "popstack");
 	return ret;
 }
 
@@ -566,9 +568,7 @@ void z80::op_scf() {
 }
 
 void z80::op_halt() {
-	if (interrupt_enable == true) {
-		halted = true;
-	}
+	halted = true;
 	addticks(1);
 }
 
