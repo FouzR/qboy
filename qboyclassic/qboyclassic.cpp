@@ -10,7 +10,7 @@ QBoyClassic::QBoyClassic(QWidget *parent) :
 
 	ui->setupUi(this);
 
-	filename = "tetris.gb";
+	filename = "";
 	qboyt = 0;
 }
 
