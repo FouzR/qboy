@@ -38,6 +38,8 @@ private:
 	int modeclock;
 	int line;
 	bool scanlinetransfered;
+	int oldmode;
+	int oldline;
 
 	bool updated;
 

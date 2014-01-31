@@ -201,6 +201,8 @@ void gbgpu::preprocessram() {
 	}
 
 	registers = newregisters;
+	oldmode = mode;
+	oldline = line;
 }
 
 void gbgpu::postprocessram() {
@@ -213,10 +215,14 @@ void gbgpu::postprocessram() {
 	mmu->writebyte(_GBGPU_VREGBASE + 1, vreg1);
 
 	bool lcdstat = false;
-	if ((vreg1 & 0x40) && line == linecmp()) lcdstat = true;
-	if ((vreg1 & 0x20) && mode == 2) lcdstat = true;
-	if ((vreg1 & 0x10) && mode == 1) lcdstat = true;
-	if ((vreg1 & 0x08) && mode == 0) lcdstat = true;
+	if (line != oldline) {
+		if ((vreg1 & 0x40) && line == linecmp()) lcdstat = true;
+	}
+	if (mode != oldmode) {
+		if ((vreg1 & 0x20) && mode == 2) lcdstat = true;
+		if ((vreg1 & 0x10) && mode == 1) lcdstat = true;
+		if ((vreg1 & 0x08) && mode == 0) lcdstat = true;
+	}
 
 	if (lcdstat || updated) {
 		quint8 int_flags = mmu->readbyte(0xFF0F);
