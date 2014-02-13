@@ -1,7 +1,12 @@
-qboy
+QBoy
 ====
 
 A Gameboy Emulator in C++ with Qt
+
+Dependencies
+------------
+- C++
+- Qt 4 or 5
 
 Features
 --------
@@ -21,5 +26,5 @@ Features
 Special thanks to
 -----------------
 
-* http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-Memory
+* http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-The-CPU
 * http://nocash.emubase.de/pandocs.htm
